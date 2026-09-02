@@ -8,14 +8,19 @@
 
 @section('main-section')
     <!-- 1. Full-Width Hero Banner Slider -->
-    <section class="bg-[#faf9f6] py-2 md:py-6 border-b border-stone-200/60">
-        <div class="container mx-auto px-2 sm:px-4 max-w-7xl">
+    <section class="bg-[#faf9f6] py-3 md:py-6 border-b border-stone-200/60">
+        <div class="container mx-auto px-3 sm:px-4 max-w-7xl">
             <div class="w-full">
-                <div id="heroSplide" class="splide rounded-sm overflow-hidden shadow-sm bg-white min-h-[180px] sm:min-h-[280px] md:min-h-[440px]" aria-label="Hero Banner">
-                    <div class="splide__track">
-                        <ul class="splide__list">
-                            @if(!empty($banners) && count($banners) > 0)
-                                @foreach($banners as $index => $banner)
+                @php
+                    $bannerList = !empty($banners) && count($banners) > 0 ? $banners : [];
+                    $hasMultipleBanners = count($bannerList) > 1;
+                @endphp
+
+                @if($hasMultipleBanners)
+                    <div id="heroSplide" class="splide rounded-sm overflow-hidden shadow-sm bg-white min-h-[180px] sm:min-h-[280px] md:min-h-[440px]" aria-label="Hero Banner">
+                        <div class="splide__track">
+                            <ul class="splide__list">
+                                @foreach($bannerList as $index => $banner)
                                     <li class="splide__slide relative w-full bg-stone-100 flex items-center justify-center overflow-hidden">
                                         @if($banner->link_url)
                                             <a href="{{ $banner->link_url }}" class="block w-full">
@@ -26,29 +31,40 @@
                                         @endif
                                     </li>
                                 @endforeach
-                            @else
-                                <!-- Default Beauty Hero Slide -->
-                                <li class="splide__slide relative w-full min-h-[180px] sm:min-h-[280px] md:min-h-[440px] bg-[#f5ede3] flex items-center overflow-hidden">
-                                    <div class="absolute inset-0 bg-gradient-to-r from-[#fbf8f3] via-[#f7f0e4] to-transparent z-0"></div>
-                                    <div class="container mx-auto px-4 md:px-12 relative z-10 flex flex-col items-end text-right ml-auto">
-                                        <div class="max-w-md">
-                                            <span class="text-[#a28e46] text-[10px] md:text-sm font-semibold uppercase tracking-widest block mb-1">Cosmetics & Spa</span>
-                                            <h1 class="font-serif text-xl sm:text-3xl md:text-5xl font-bold text-[#a28e46] italic leading-tight mb-1">
-                                                The Body Care
-                                            </h1>
-                                            <h3 class="text-gray-500 font-sans text-xs sm:text-sm md:text-lg font-light tracking-widest uppercase mb-3 sm:mb-6">
-                                                FRUIT FACE PACK
-                                            </h3>
-                                            <a href="{{ route('product.archive') }}" class="inline-flex items-center gap-2 border-2 border-[#a28e46] text-[#a28e46] hover:bg-[#a28e46] hover:text-white font-semibold text-[10px] sm:text-xs tracking-widest uppercase px-4 py-1.5 sm:px-7 sm:py-2.5 rounded-full transition-all duration-300 no-underline">
-                                                SHOP NOW
-                                            </a>
-                                        </div>
-                                    </div>
-                                </li>
-                            @endif
-                        </ul>
+                            </ul>
+                        </div>
                     </div>
-                </div>
+                @elseif(count($bannerList) === 1)
+                    @php $singleBanner = $bannerList[0]; @endphp
+                    <div class="rounded-sm overflow-hidden shadow-sm bg-white w-full flex items-center justify-center">
+                        @if($singleBanner->link_url)
+                            <a href="{{ $singleBanner->link_url }}" class="block w-full">
+                                <img src="{{ $singleBanner->image_url }}" alt="{{ $singleBanner->title ?? 'Hero Banner' }}" class="w-full h-auto max-h-[520px] object-contain sm:object-cover block" fetchpriority="high" loading="eager" decoding="sync">
+                            </a>
+                        @else
+                            <img src="{{ $singleBanner->image_url }}" alt="{{ $singleBanner->title ?? 'Hero Banner' }}" class="w-full h-auto max-h-[520px] object-contain sm:object-cover block" fetchpriority="high" loading="eager" decoding="sync">
+                        @endif
+                    </div>
+                @else
+                    <!-- Default Beauty Hero Slide -->
+                    <div class="rounded-sm overflow-hidden shadow-sm bg-[#f5ede3] min-h-[180px] sm:min-h-[280px] md:min-h-[440px] relative flex items-center">
+                        <div class="absolute inset-0 bg-gradient-to-r from-[#fbf8f3] via-[#f7f0e4] to-transparent z-0"></div>
+                        <div class="container mx-auto px-4 md:px-12 relative z-10 flex flex-col items-end text-right ml-auto">
+                            <div class="max-w-md">
+                                <span class="text-[#a28e46] text-[10px] md:text-sm font-semibold uppercase tracking-widest block mb-1">Cosmetics & Spa</span>
+                                <h1 class="font-serif text-xl sm:text-3xl md:text-5xl font-bold text-[#a28e46] italic leading-tight mb-1">
+                                    The Body Care
+                                </h1>
+                                <h3 class="text-gray-500 font-sans text-xs sm:text-sm md:text-lg font-light tracking-widest uppercase mb-3 sm:mb-6">
+                                    FRUIT FACE PACK
+                                </h3>
+                                <a href="{{ route('product.archive') }}" class="inline-flex items-center gap-2 border-2 border-[#a28e46] text-[#a28e46] hover:bg-[#a28e46] hover:text-white font-semibold text-[10px] sm:text-xs tracking-widest uppercase px-4 py-1.5 sm:px-7 sm:py-2.5 rounded-full transition-all duration-300 no-underline">
+                                    SHOP NOW
+                                </a>
+                            </div>
+                        </div>
+                    </div>
+                @endif
             </div>
         </div>
     </section>

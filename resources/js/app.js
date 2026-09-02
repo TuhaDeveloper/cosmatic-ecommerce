@@ -544,19 +544,30 @@ document.addEventListener('DOMContentLoaded', function () {
     const heroEl = document.getElementById('heroSplide');
     if (heroEl && !heroEl.__splideMounted) {
         try {
+            const slides = heroEl.querySelectorAll('.splide__slide');
+            const hasMultiple = slides.length > 1;
             const heroSplide = new Splide(heroEl, {
-                type: 'loop',
-                autoplay: true,
+                type: hasMultiple ? 'loop' : 'slide',
+                perPage: 1,
+                perMove: 1,
+                width: '100%',
+                autoWidth: false,
+                autoplay: hasMultiple,
                 interval: 5000,
                 pauseOnHover: true,
-                arrows: true,
-                pagination: true,
-                drag: true,
+                arrows: hasMultiple,
+                pagination: hasMultiple,
+                drag: hasMultiple,
                 rewind: true,
                 speed: 500,
             });
             heroSplide.mount();
             heroEl.__splideMounted = true;
+
+            // Recalculate once images or page finish loading so initial position is 100% accurate
+            window.addEventListener('load', function () {
+                heroSplide.refresh();
+            });
         } catch (e) {
             console.error('Failed to mount hero Splide:', e);
         }

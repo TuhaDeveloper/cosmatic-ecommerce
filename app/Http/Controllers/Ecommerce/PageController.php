@@ -20,13 +20,17 @@ class PageController extends Controller
         return ProductServiceCategory::where('status', 'active')
             ->where('show_in_ecommerce', 1)
             ->whereNull('parent_id')
-            ->with(['children' => function($q) {
-                $q->where('status', 'active')
-                  ->where('show_in_ecommerce', 1)
-                  ->with(['children' => function($q2) {
-                      $q2->where('status', 'active')->where('show_in_ecommerce', 1);
-                  }]);
-            }])
+            ->with([
+                'children' => function ($q) {
+                    $q->where('status', 'active')
+                        ->where('show_in_ecommerce', 1)
+                        ->with([
+                            'children' => function ($q2) {
+                                $q2->where('status', 'active')->where('show_in_ecommerce', 1);
+                            }
+                        ]);
+                }
+            ])
             ->get();
     }
 
@@ -40,12 +44,13 @@ class PageController extends Controller
     private function attachWishlistStatus($products)
     {
         $userId = Auth::id();
-        if (!$userId) return $products;
+        if (!$userId)
+            return $products;
 
-        $productIds = $products instanceof \Illuminate\Pagination\LengthAwarePaginator 
-            ? $products->pluck('id')->toArray() 
+        $productIds = $products instanceof \Illuminate\Pagination\LengthAwarePaginator
+            ? $products->pluck('id')->toArray()
             : $products->pluck('id')->toArray();
-            
+
         $wishlistedIds = Wishlist::where('user_id', $userId)
             ->whereIn('product_id', $productIds)
             ->pluck('product_id')
@@ -89,11 +94,13 @@ class PageController extends Controller
         $categories = ProductServiceCategory::where('status', 'active')
             ->where('show_in_ecommerce', 1)
             ->whereNull('parent_id')
-            ->with(['children' => function($q) {
-                $q->where('status', 'active')->where('show_in_ecommerce', 1);
-            }])
+            ->with([
+                'children' => function ($q) {
+                    $q->where('status', 'active')->where('show_in_ecommerce', 1);
+                }
+            ])
             ->get();
-            
+
         $pageTitle = 'All Categories';
         return view('ecommerce.categories', compact('categories', 'pageTitle'));
     }
@@ -115,7 +122,7 @@ class PageController extends Controller
             ->paginate(12)
             ->withPath('/best-deal')
             ->withQueryString();
-            
+
         $this->attachWishlistStatus($products);
 
         $maxProductPrice = $this->getMaxProductPrice();
@@ -128,17 +135,17 @@ class PageController extends Controller
         // Return JSON for AJAX requests
         if ($request->ajax() || $request->get('infinite_scroll')) {
             $html = view('ecommerce.partials.best-deal-grid', [
-                'products'       => $products,
+                'products' => $products,
                 'hidePagination' => false,
             ])->render();
 
             return response()->json([
-                'success'     => true,
-                'html'        => $html,
-                'hasMore'     => $products->hasMorePages(),
+                'success' => true,
+                'html' => $html,
+                'hasMore' => $products->hasMorePages(),
                 'currentPage' => $products->currentPage(),
-                'total'       => $products->total(),
-                'count'       => $products->count(),
+                'total' => $products->total(),
+                'count' => $products->count(),
             ]);
         }
 
@@ -181,11 +188,11 @@ class PageController extends Controller
             'subject' => 'nullable|string|max:255',
             'message' => 'required|string',
         ]);
-        
+
         if ($request->ajax()) {
             return response()->json(['success' => true, 'message' => 'Thank you! Your message has been received. Our concierge team will contact you shortly.']);
         }
-        
+
         return back()->with('success', 'Thank you! Your message has been received. Our concierge team will contact you shortly.');
     }
 
@@ -250,7 +257,7 @@ class PageController extends Controller
             ])
             ->where('slug', $slug)
             ->firstOrFail();
-        
+
         $userId = Auth::id();
         $product->is_wishlisted = $userId ? Wishlist::where('user_id', $userId)->where('product_id', $product->id)->exists() : false;
 
@@ -260,13 +267,15 @@ class PageController extends Controller
 
         if ($product->has_variations) {
             foreach ($product->variations as $variation) {
-                if ($variation->status !== 'active') continue;
+                if ($variation->status !== 'active')
+                    continue;
 
                 $comboMap = [];
                 foreach ($variation->combinations as $combination) {
                     $attr = $combination->attribute;
                     $val = $combination->attributeValue;
-                    if (!$attr || !$val) continue;
+                    if (!$attr || !$val)
+                        continue;
 
                     $comboMap[$attr->id] = $val->id;
 
@@ -287,8 +296,8 @@ class PageController extends Controller
                     }
                 }
 
-                $vPrice = (float)$variation->price;
-                $vDiscount = $variation->discount > 0 ? (float)$variation->discount : 0;
+                $vPrice = (float) $variation->price;
+                $vDiscount = $variation->discount > 0 ? (float) $variation->discount : 0;
                 $vEffective = $vDiscount > 0 && $vDiscount < $vPrice ? $vDiscount : $vPrice;
                 $stock = $variation->stocks->sum('quantity');
 
@@ -348,9 +357,11 @@ class PageController extends Controller
     public function products(Request $request)
     {
         $categories = $this->getSidebarCategories();
-        $brands = \App\Models\Brand::withCount(['products' => function($q) {
-            $q->published();
-        }])->having('products_count', '>', 0)->get();
+        $brands = \App\Models\Brand::withCount([
+            'products' => function ($q) {
+                $q->published();
+            }
+        ])->having('products_count', '>', 0)->get();
 
         $query = Product::published()->with(['category', 'brand']);
 
@@ -388,17 +399,17 @@ class PageController extends Controller
 
         // In Stock filter
         if ($request->filled('in_stock') && $request->in_stock == '1') {
-            $query->where(function($q) {
+            $query->where(function ($q) {
                 $q->where('manage_stock', false)
-                  ->orWhereHas('branchStock', function($bs) {
-                      $bs->where('quantity', '>', 0);
-                  })
-                  ->orWhereHas('warehouseStock', function($ws) {
-                      $ws->where('quantity', '>', 0);
-                  })
-                  ->orWhereHas('variations.stocks', function($vs) {
-                      $vs->where('quantity', '>', 0);
-                  });
+                    ->orWhereHas('branchStock', function ($bs) {
+                        $bs->where('quantity', '>', 0);
+                    })
+                    ->orWhereHas('warehouseStock', function ($ws) {
+                        $ws->where('quantity', '>', 0);
+                    })
+                    ->orWhereHas('variations.stocks', function ($vs) {
+                        $vs->where('quantity', '>', 0);
+                    });
             });
         }
 
@@ -464,7 +475,7 @@ class PageController extends Controller
         $this->attachWishlistStatus($products);
 
         $pageTitle = 'Search Results for "' . $q . '"';
-        
+
         $priceMin = $request->get('price_min', 0);
         $priceMax = $request->get('price_max', $maxProductPrice);
         $selectedCategories = [];

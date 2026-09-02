@@ -188,6 +188,32 @@
     pointer-events: auto !important;
 }
 
+/* ── Hero Splide Strict 100% Slide Width ── */
+#heroSplide {
+    width: 100% !important;
+    max-width: 100% !important;
+    position: relative;
+}
+#heroSplide .splide__track {
+    width: 100% !important;
+    overflow: hidden !important;
+}
+#heroSplide .splide__list {
+    display: flex !important;
+    width: 100% !important;
+}
+#heroSplide .splide__slide {
+    width: 100% !important;
+    min-width: 100% !important;
+    max-width: 100% !important;
+    flex: 0 0 100% !important;
+    box-sizing: border-box !important;
+}
+#heroSplide .splide__slide img {
+    width: 100% !important;
+    display: block !important;
+}
+
 /* ── Modern Splide Carousel Arrows & Indicators ── */
 .splide__arrow {
     background: rgba(255, 255, 255, 0.92) !important;
