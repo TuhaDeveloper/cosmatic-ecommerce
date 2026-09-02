@@ -1,295 +1,294 @@
 @extends('ecommerce.master')
 
+@section('title', 'Contact Us - Harosa Luxury Cosmetics')
+
 @section('main-section')
-    <!-- Page Header -->
-    <div class="page-header-premium mb-5">
-        <div class="container container-custom">
-            <h1 class="page-title-main text-white mb-0">Contact Us</h1>
-            <nav aria-label="breadcrumb">
-                <ol class="breadcrumb mb-0 mt-2">
-                    <li class="breadcrumb-item"><a href="/" class="text-white-50">Home</a></li>
-                    <li class="breadcrumb-item active text-white" aria-current="page">Contact Us</li>
-                </ol>
+<div class="bg-stone-50/50 min-h-screen pb-20">
+
+    <!-- 1. Editorial Hero Header -->
+    <div class="bg-gradient-to-r from-[#111111] via-[#1c1917] to-[#262013] text-white py-14 sm:py-20 relative overflow-hidden border-b border-[#a28e46]/30">
+        <div class="absolute -top-24 -right-24 w-96 h-96 bg-[#a28e46]/10 rounded-full blur-3xl pointer-events-none"></div>
+        <div class="container mx-auto px-4 max-w-7xl relative z-10 text-center">
+            <div class="inline-flex items-center gap-2 bg-[#a28e46]/20 border border-[#a28e46]/40 text-[#d4af37] px-4 py-1 text-[11px] font-bold uppercase tracking-widest rounded-full mb-4 shadow-xs">
+                <i class="fa-solid fa-headset text-[10px]"></i>
+                <span>BEAUTY CONCIERGE & SUPPORT</span>
+            </div>
+            <h1 class="font-serif text-3xl sm:text-5xl lg:text-6xl font-bold tracking-tight text-white uppercase mb-4">
+                GET IN TOUCH WITH US
+            </h1>
+            <p class="text-stone-300 text-xs sm:text-base font-light max-w-xl mx-auto leading-relaxed">
+                Have inquiries regarding an order, skincare advice, or need assistance? Our beauty concierge team is here to assist you.
+            </p>
+            <nav class="flex items-center justify-center gap-2 text-xs text-stone-400 mt-6" aria-label="Breadcrumb">
+                <a href="/" class="hover:text-[#a28e46] transition-colors no-underline text-stone-400">Home</a>
+                <span class="text-stone-600">/</span>
+                <span class="text-white font-medium">Contact Us</span>
             </nav>
         </div>
     </div>
 
-    <style>
-        .page-header-premium {
-            background: linear-gradient(135deg, #111827 0%, #1f2937 100%);
-            padding: 80px 0;
-            position: relative;
-            overflow: hidden;
-        }
-        .page-header-premium::before {
-            content: '';
-            position: absolute;
-            top: -50%;
-            right: -10%;
-            width: 400px;
-            height: 400px;
-            background: var(--primary-color, #7fad39);
-            filter: blur(150px);
-            opacity: 0.1;
-        }
-        .page-title-main {
-            font-family: 'Outfit', sans-serif;
-            font-weight: 800;
-            font-size: 2.8rem;
-            letter-spacing: -1px;
-        }
-    </style>
-
-    <!-- Main Content -->
-    <section class="py-5">
-        <div class="container">
-
-        <!-- Contact Information -->
-        <div class="row mb-4">
-            <div class="col-12">
-                <div class="mb-4">
-                    <h2 class="section-title mb-2 text-start">Get in Touch</h2>
-                    <p class="section-subtitle text-start mb-0">We're here to help you find the perfect water purification solution for your needs</p>
+    <!-- 2. Contact Cards Channels -->
+    <div class="container mx-auto px-4 max-w-7xl -mt-8 relative z-20">
+        <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-6">
+            
+            <!-- Phone Support -->
+            <div class="bg-white border border-stone-200/90 rounded-sm p-6 text-center shadow-md hover:shadow-xl hover:border-[#a28e46]/50 transition-all duration-300">
+                <div class="w-12 h-12 rounded-full bg-[#faf7f0] text-[#a28e46] flex items-center justify-center text-lg mx-auto mb-3.5 shadow-xs">
+                    <i class="fa-solid fa-phone"></i>
                 </div>
-
-				<div class="row g-4">
-					<!-- Contact Cards -->
-					<div class="col-md-3">
-                        <div class="card h-100 border-0 shadow-sm text-center">
-                            <div class="card-body p-4">
-                                <div class="service-icon d-inline-flex align-items-center justify-content-center mb-4"
-                                    style="width: 80px; height: 80px;">
-                                    <i class="fas fa-phone"></i>
-                                </div>
-                                <h4 class="promo-title mb-3">Call Us</h4>
-                                <p class="promo-description mb-3">Speak directly with our experts</p>
-                                <p class="stat-number fs-5">{{$general_settings->contact_phone}}</p>
-                                <!-- <p class="stat-label">Mon - Fri: 9:00 AM - 6:00 PM</p> -->
-                            </div>
-                        </div>
-                    </div>
-
-					<div class="col-md-3">
-                        <div class="card h-100 border-0 shadow-sm text-center">
-                            <div class="card-body p-4">
-                                <div class="service-icon d-inline-flex align-items-center justify-content-center mb-4"
-                                    style="width: 80px; height: 80px;">
-                                    <i class="fas fa-envelope"></i>
-                                </div>
-                                <h4 class="promo-title mb-3">Email Us</h4>
-                                <p class="promo-description mb-3">Send us your questions anytime</p>
-                                <p class="stat-number fs-6">{{$general_settings->contact_email}}</p>
-                                <!-- <p class="stat-label">We respond within 24 hours</p> -->
-                            </div>
-                        </div>
-                    </div>
-
-					<div class="col-md-3">
-                        <div class="card h-100 border-0 shadow-sm text-center">
-                            <div class="card-body p-4">
-                                <div class="service-icon d-inline-flex align-items-center justify-content-center mb-4"
-                                    style="width: 80px; height: 80px;">
-                                    <i class="fas fa-map-marker-alt"></i>
-                                </div>
-                                <h4 class="promo-title mb-3">Visit Us</h4>
-                                <p class="promo-description mb-3">Come to our showroom</p>
-                                <p class="stat-number fs-6">{{$general_settings->contact_address}}</p>
-                                <!-- <p class="stat-label">Open 7 days a week</p> -->
-                            </div>
-                        </div>
-                    </div>
-
-					<!-- Head Office -->
-					<div class="col-md-3">
-						<div class="card h-100 border-0 shadow-sm text-center">
-							<div class="card-body p-4">
-								<div class="service-icon d-inline-flex align-items-center justify-content-center mb-4"
-									style="width: 80px; height: 80px;">
-									<i class="fas fa-building"></i>
-								</div>
-								<h4 class="promo-title mb-3">Head Office & Factory</h4>
-								<p class="promo-description mb-3">office location</p>
-								<!-- <p class="stat-number fs-6">{{ $general_settings->head_office_address ?? ($general_settings->contact_address_2 ?? 'Add head office address in settings.') }}</p> -->
-                                 <p class="stat-number fs-6" >Purbahati, Natunpara, Hemayetpur, Savar, Dhaka-1340</p>
-							</div>
-						</div>
-					</div>
-                </div>
+                <h3 class="font-serif font-bold text-xs uppercase tracking-wider text-stone-900 mb-1">Call Concierge</h3>
+                <p class="text-[11px] text-stone-500 mb-2.5">Direct phone assistance</p>
+                @php $phone = $general_settings->contact_phone ?? '+880 1700-000000'; @endphp
+                <a href="tel:{{ preg_replace('/[^0-9+]/', '', $phone) }}" class="text-xs font-bold text-[#a28e46] hover:text-[#8e7b39] transition-colors no-underline">
+                    {{ $phone }}
+                </a>
             </div>
-        </div>
 
-        <!-- Contact Form + Support Image Section -->
-        <div class="row g-4 align-items-stretch mb-5">
+            <!-- Email Support -->
+            <div class="bg-white border border-stone-200/90 rounded-sm p-6 text-center shadow-md hover:shadow-xl hover:border-[#a28e46]/50 transition-all duration-300">
+                <div class="w-12 h-12 rounded-full bg-[#faf7f0] text-[#a28e46] flex items-center justify-center text-lg mx-auto mb-3.5 shadow-xs">
+                    <i class="fa-solid fa-envelope"></i>
+                </div>
+                <h3 class="font-serif font-bold text-xs uppercase tracking-wider text-stone-900 mb-1">Email Inquiries</h3>
+                <p class="text-[11px] text-stone-500 mb-2.5">Guaranteed response within 24h</p>
+                @php $email = $general_settings->contact_email ?? 'support@harosa.com'; @endphp
+                <a href="mailto:{{ $email }}" class="text-xs font-bold text-[#a28e46] hover:text-[#8e7b39] transition-colors no-underline truncate block">
+                    {{ $email }}
+                </a>
+            </div>
+
+            <!-- WhatsApp Support -->
+            <div class="bg-white border border-stone-200/90 rounded-sm p-6 text-center shadow-md hover:shadow-xl hover:border-[#a28e46]/50 transition-all duration-300">
+                <div class="w-12 h-12 rounded-full bg-[#faf7f0] text-[#a28e46] flex items-center justify-center text-lg mx-auto mb-3.5 shadow-xs">
+                    <i class="fa-brands fa-whatsapp text-xl"></i>
+                </div>
+                <h3 class="font-serif font-bold text-xs uppercase tracking-wider text-stone-900 mb-1">WhatsApp Chat</h3>
+                <p class="text-[11px] text-stone-500 mb-2.5">Instant chat & order tracking</p>
+                <a href="https://wa.me/{{ preg_replace('/[^0-9]/', '', $phone) }}" target="_blank" class="text-xs font-bold text-[#a28e46] hover:text-[#8e7b39] transition-colors no-underline inline-flex items-center gap-1">
+                    <span>Chat on WhatsApp</span>
+                    <i class="fa-solid fa-arrow-up-right-from-square text-[9px]"></i>
+                </a>
+            </div>
+
+            <!-- Location Boutique -->
+            <div class="bg-white border border-stone-200/90 rounded-sm p-6 text-center shadow-md hover:shadow-xl hover:border-[#a28e46]/50 transition-all duration-300">
+                <div class="w-12 h-12 rounded-full bg-[#faf7f0] text-[#a28e46] flex items-center justify-center text-lg mx-auto mb-3.5 shadow-xs">
+                    <i class="fa-solid fa-location-dot"></i>
+                </div>
+                <h3 class="font-serif font-bold text-xs uppercase tracking-wider text-stone-900 mb-1">Flagship Boutique</h3>
+                <p class="text-[11px] text-stone-500 mb-2.5">Visit our store showroom</p>
+                <span class="text-xs font-medium text-stone-800 line-clamp-1" title="{{ $general_settings->contact_address ?? 'Dhaka, Bangladesh' }}">
+                    {{ $general_settings->contact_address ?? 'Dhaka, Bangladesh' }}
+                </span>
+            </div>
+
+        </div>
+    </div>
+
+    <!-- 3. Main Form & Showroom Hours Section -->
+    <div class="container mx-auto px-4 max-w-7xl py-14 sm:py-16">
+        <div class="grid grid-cols-1 lg:grid-cols-12 gap-8 lg:gap-12 items-start">
+            
             <!-- Left: Contact Form -->
-            <div class="col-lg-7">
-                <div class="card border-0 shadow h-100">
-                    <div class="card-body p-4 p-lg-5">
-                        <div class="mb-4">
-                            <h3 class="section-title mb-2">Can't find the answer you are looking for?</h3>
-                            <p class="text-muted mb-0">Our friendly assistant is here to assist you 24 hours a day!</p>
+            <div class="lg:col-span-7 bg-white border border-stone-200/80 rounded-sm p-6 sm:p-10 shadow-sm">
+                <div class="mb-6">
+                    <span class="text-xs font-bold text-[#a28e46] uppercase tracking-widest block mb-1">Send a Message</span>
+                    <h2 class="font-serif text-2xl font-bold text-stone-900 uppercase tracking-wide">
+                        How Can We Assist You?
+                    </h2>
+                    <p class="text-stone-500 text-xs mt-1">
+                        Fill out the form below and our team will get back to you promptly.
+                    </p>
+                </div>
+
+                <!-- Alert Feedback -->
+                <div id="contactAlertBox" class="hidden mb-5 p-4 rounded-sm text-xs font-medium"></div>
+
+                <form id="contactForm" method="POST" action="{{ route('contact.submit') }}" class="space-y-4">
+                    @csrf
+                    
+                    <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                        <div>
+                            <label class="block text-[11px] font-bold text-stone-700 uppercase tracking-wider mb-1.5">
+                                Full Name <span class="text-rose-500">*</span>
+                            </label>
+                            <input type="text" name="full_name" required placeholder="Your full name" class="w-full px-3.5 py-2.5 text-xs bg-stone-50 border border-stone-300 rounded-sm focus:border-[#a28e46] focus:bg-white focus:outline-none transition-colors">
                         </div>
-                        <form id="contactForm" method="POST" action="{{ route('contact.submit') }}">
-                            @csrf
-                            <div class="row g-3">
-                                <div class="col-md-6">
-                                    <label for="fullName" class="form-label promo-title">Full Name <span class="text-danger">*</span></label>
-                                    <input type="text" class="form-control" id="fullName" name="full_name" placeholder="Enter full name" required>
-                                    <div class="invalid-feedback" id="fullNameError"></div>
-                                </div>
-                                <div class="col-md-6">
-                                    <label for="phoneNumber" class="form-label promo-title">Phone Number <span class="text-danger">*</span></label>
-                                    <input type="tel" class="form-control" id="phoneNumber" name="phone_number" placeholder="Enter phone number" required>
-                                    <div class="invalid-feedback" id="phoneNumberError"></div>
-                                </div>
-                                <div class="col-12">
-                                    <label for="subject" class="form-label promo-title">Subject <span class="text-danger">*</span></label>
-                                    <input type="text" class="form-control" id="subject" name="subject" placeholder="Enter subject line" required>
-                                    <div class="invalid-feedback" id="subjectError"></div>
-                                </div>
-                                <div class="col-12">
-                                    <label for="messageText" class="form-label promo-title">Message <span class="text-danger">*</span></label>
-                                    <textarea class="form-control" id="messageText" name="message" rows="6" placeholder="Write your message ..." required></textarea>
-                                    <div class="invalid-feedback" id="messageError"></div>
-                                </div>
-                            </div>
-                            <div class="mt-4">
-                                <button type="submit" class="btn btn-primary-custom px-4" id="submitBtn">
-                                    <span class="spinner-border spinner-border-sm d-none" id="spinner" role="status" aria-hidden="true"></span>
-                                    <span id="submitText">Send</span>
-                                </button>
-                            </div>
-                        </form>
-                        
-                        <!-- Success/Error Messages -->
-                        <div id="alertContainer" class="mt-3"></div>
+                        <div>
+                            <label class="block text-[11px] font-bold text-stone-700 uppercase tracking-wider mb-1.5">
+                                Phone Number <span class="text-rose-500">*</span>
+                            </label>
+                            <input type="tel" name="phone_number" required placeholder="Your phone number" class="w-full px-3.5 py-2.5 text-xs bg-stone-50 border border-stone-300 rounded-sm focus:border-[#a28e46] focus:bg-white focus:outline-none transition-colors">
+                        </div>
+                    </div>
+
+                    <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                        <div>
+                            <label class="block text-[11px] font-bold text-stone-700 uppercase tracking-wider mb-1.5">
+                                Email Address
+                            </label>
+                            <input type="email" name="email" placeholder="you@example.com" class="w-full px-3.5 py-2.5 text-xs bg-stone-50 border border-stone-300 rounded-sm focus:border-[#a28e46] focus:bg-white focus:outline-none transition-colors">
+                        </div>
+                        <div>
+                            <label class="block text-[11px] font-bold text-stone-700 uppercase tracking-wider mb-1.5">
+                                Subject
+                            </label>
+                            <input type="text" name="subject" placeholder="e.g. Order Inquiry / Skincare advice" class="w-full px-3.5 py-2.5 text-xs bg-stone-50 border border-stone-300 rounded-sm focus:border-[#a28e46] focus:bg-white focus:outline-none transition-colors">
+                        </div>
+                    </div>
+
+                    <div>
+                        <label class="block text-[11px] font-bold text-stone-700 uppercase tracking-wider mb-1.5">
+                            Your Message <span class="text-rose-500">*</span>
+                        </label>
+                        <textarea name="message" rows="5" required placeholder="Write your message here..." class="w-full px-3.5 py-2.5 text-xs bg-stone-50 border border-stone-300 rounded-sm focus:border-[#a28e46] focus:bg-white focus:outline-none transition-colors resize-none"></textarea>
+                    </div>
+
+                    <button type="submit" id="contactSubmitBtn" class="w-full sm:w-auto bg-[#a28e46] hover:bg-[#8e7b39] text-white font-bold text-xs uppercase tracking-widest px-8 py-3.5 rounded-none shadow-md hover:shadow-lg transition-all cursor-pointer focus:outline-none flex items-center justify-center gap-2">
+                        <span id="contactSubmitText">Send Message</span>
+                        <div id="contactSubmitSpinner" class="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin hidden"></div>
+                    </button>
+                </form>
+            </div>
+
+            <!-- Right: Store Details & Operating Schedule -->
+            <div class="lg:col-span-5 space-y-6">
+                
+                <!-- Operating Schedule Card -->
+                <div class="bg-white border border-stone-200/80 rounded-sm p-6 sm:p-8 shadow-sm">
+                    <h3 class="font-serif font-bold text-sm uppercase tracking-wider text-stone-900 mb-4 pb-3 border-b border-stone-100 flex items-center gap-2">
+                        <i class="fa-regular fa-clock text-[#a28e46]"></i>
+                        <span>Operating Hours</span>
+                    </h3>
+                    <ul class="space-y-3 text-xs text-stone-600">
+                        <li class="flex justify-between items-center py-1 border-b border-stone-50">
+                            <span class="font-medium text-stone-800">Online Store & Support</span>
+                            <span class="font-bold text-[#a28e46]">24/7 Everyday</span>
+                        </li>
+                        <li class="flex justify-between items-center py-1 border-b border-stone-50">
+                            <span class="font-medium text-stone-800">Phone & WhatsApp Concierge</span>
+                            <span class="font-mono text-stone-700">9:00 AM - 10:00 PM</span>
+                        </li>
+                        <li class="flex justify-between items-center py-1">
+                            <span class="font-medium text-stone-800">Courier Dispatch</span>
+                            <span class="font-mono text-stone-700">Sat - Thu (Daily)</span>
+                        </li>
+                    </ul>
+                </div>
+
+                <!-- Showroom & Guarantee Card -->
+                <div class="bg-[#faf7f0] border border-[#a28e46]/30 rounded-sm p-6 sm:p-8 shadow-sm">
+                    <h3 class="font-serif font-bold text-sm uppercase tracking-wider text-stone-900 mb-3 flex items-center gap-2">
+                        <i class="fa-solid fa-shield-halved text-[#a28e46]"></i>
+                        <span>The Harosa Authenticity Guarantee</span>
+                    </h3>
+                    <p class="text-xs text-stone-600 leading-relaxed mb-4">
+                        Every cosmetic, fragrance, and skincare formulation provided by Harosa is 100% genuine, directly imported, and temperature-controlled for peak potency.
+                    </p>
+                    <div class="flex items-center gap-3 pt-2">
+                        <span class="inline-flex items-center gap-1.5 text-[11px] font-bold text-[#a28e46]">
+                            <i class="fa-solid fa-truck-fast"></i>
+                            <span>Express Shipping</span>
+                        </span>
+                        <span class="text-stone-300">•</span>
+                        <span class="inline-flex items-center gap-1.5 text-[11px] font-bold text-[#a28e46]">
+                            <i class="fa-solid fa-rotate-left"></i>
+                            <span>Easy Exchanges</span>
+                        </span>
                     </div>
                 </div>
+
             </div>
 
-            <!-- Right: Support Image -->
-            <div class="col-lg-5">
-                <div class="h-100 w-100 rounded-3 overflow-hidden shadow-sm d-flex align-items-center justify-content-center" style="background:#f7f8fb;">
-                    @if(isset($general_settings->support_image) && $general_settings->support_image)
-                        <img src="{{ asset($general_settings->support_image) }}" alt="Customer Support" class="img-fluid" style="object-fit:cover; max-height: 520px;">
-                    @else
-                        <img src="{{ asset('public/static/customer-support.jpg') }}" alt="Customer Support" class="img-fluid" style="object-fit:cover; max-height: 520px;">
-                    @endif
-                </div>
+        </div>
+    </div>
+
+    <!-- 4. Quick FAQ Section -->
+    <div class="container mx-auto px-4 max-w-4xl pt-4">
+        <div class="text-center mb-8">
+            <span class="text-xs font-bold text-[#a28e46] uppercase tracking-widest block mb-1">Common Questions</span>
+            <h2 class="font-serif text-2xl font-bold text-stone-900 uppercase tracking-wide">
+                Frequently Asked Inquiries
+            </h2>
+        </div>
+
+        <div class="space-y-3">
+            <div class="bg-white border border-stone-200/80 rounded-sm p-4 sm:p-5 shadow-xs">
+                <h4 class="font-serif font-bold text-xs sm:text-sm text-stone-900 mb-1.5">How long does courier delivery take?</h4>
+                <p class="text-xs text-stone-600 leading-relaxed">
+                    Inside Dhaka, delivery typically takes 24 to 48 hours. For locations outside Dhaka, deliveries are completed within 2 to 4 business days via our trusted courier partners.
+                </p>
+            </div>
+            <div class="bg-white border border-stone-200/80 rounded-sm p-4 sm:p-5 shadow-xs">
+                <h4 class="font-serif font-bold text-xs sm:text-sm text-stone-900 mb-1.5">Are all your products 100% authentic?</h4>
+                <p class="text-xs text-stone-600 leading-relaxed">
+                    Yes, absolutely. We source exclusively from authorized international brand distributors and verified direct suppliers. Every batch is barcode verified.
+                </p>
+            </div>
+            <div class="bg-white border border-stone-200/80 rounded-sm p-4 sm:p-5 shadow-xs">
+                <h4 class="font-serif font-bold text-xs sm:text-sm text-stone-900 mb-1.5">What payment methods do you accept?</h4>
+                <p class="text-xs text-stone-600 leading-relaxed">
+                    We accept Cash on Delivery (COD), bKash, Nagad, Rocket, as well as Visa, Mastercard, and American Express credit/debit cards.
+                </p>
             </div>
         </div>
-        </div>
+    </div>
 
-    <!-- Font Awesome is already loaded in master.blade.php - no need for dynamic loading -->
+</div>
 
-    </section>
-
-    <script>
+@push('scripts')
+<script>
     document.addEventListener('DOMContentLoaded', function() {
         const contactForm = document.getElementById('contactForm');
-        const submitBtn = document.getElementById('submitBtn');
-        const spinner = document.getElementById('spinner');
-        const submitText = document.getElementById('submitText');
-        const alertContainer = document.getElementById('alertContainer');
+        const submitBtn = document.getElementById('contactSubmitBtn');
+        const submitText = document.getElementById('contactSubmitText');
+        const spinner = document.getElementById('contactSubmitSpinner');
+        const alertBox = document.getElementById('contactAlertBox');
 
-        contactForm.addEventListener('submit', function(e) {
+        if (!contactForm) return;
+
+        contactForm.addEventListener('submit', async function(e) {
             e.preventDefault();
-            
-            // Clear previous errors
-            clearErrors();
-            clearAlerts();
-            
-            // Show loading state
-            setLoadingState(true);
-            
-            // Get form data
-            const formData = new FormData(contactForm);
-            
-            // Send AJAX request
-            fetch(contactForm.action, {
-                method: 'POST',
-                body: formData,
-                headers: {
-                    'X-Requested-With': 'XMLHttpRequest',
-                    'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content')
-                }
-            })
-            .then(response => response.json())
-            .then(data => {
-                setLoadingState(false);
-                
+
+            submitBtn.disabled = true;
+            submitText.textContent = 'Sending...';
+            spinner.classList.remove('hidden');
+            alertBox.classList.add('hidden');
+
+            try {
+                const formData = new FormData(contactForm);
+                const res = await fetch(contactForm.action, {
+                    method: 'POST',
+                    body: formData,
+                    headers: {
+                        'X-Requested-With': 'XMLHttpRequest'
+                    }
+                });
+
+                const data = await res.json();
+
                 if (data.success) {
-                    showAlert('success', data.message);
+                    alertBox.className = 'mb-5 p-4 rounded-sm text-xs font-medium bg-emerald-50 text-emerald-800 border border-emerald-200';
+                    alertBox.textContent = data.message || 'Thank you! Your message has been sent successfully.';
+                    alertBox.classList.remove('hidden');
                     contactForm.reset();
                 } else {
-                    if (data.errors) {
-                        showValidationErrors(data.errors);
-                    } else {
-                        showAlert('danger', data.message);
-                    }
+                    alertBox.className = 'mb-5 p-4 rounded-sm text-xs font-medium bg-rose-50 text-rose-800 border border-rose-200';
+                    alertBox.textContent = data.message || 'An error occurred. Please check your inputs and try again.';
+                    alertBox.classList.remove('hidden');
                 }
-            })
-            .catch(error => {
-                setLoadingState(false);
-                console.error('Error:', error);
-                showAlert('danger', 'An error occurred. Please try again.');
-            });
-        });
-
-        function setLoadingState(loading) {
-            if (loading) {
-                submitBtn.disabled = true;
-                spinner.classList.remove('d-none');
-                submitText.textContent = 'Sending...';
-            } else {
+            } catch(err) {
+                console.error(err);
+                alertBox.className = 'mb-5 p-4 rounded-sm text-xs font-medium bg-rose-50 text-rose-800 border border-rose-200';
+                alertBox.textContent = 'Could not send your message at this time. Please try calling or WhatsApp.';
+                alertBox.classList.remove('hidden');
+            } finally {
                 submitBtn.disabled = false;
-                spinner.classList.add('d-none');
-                submitText.textContent = 'Send';
+                submitText.textContent = 'Send Message';
+                spinner.classList.add('hidden');
             }
-        }
-
-        function clearErrors() {
-            const errorElements = document.querySelectorAll('.invalid-feedback');
-            errorElements.forEach(element => {
-                element.textContent = '';
-                element.style.display = 'none';
-            });
-            
-            const inputElements = document.querySelectorAll('.form-control');
-            inputElements.forEach(element => {
-                element.classList.remove('is-invalid');
-            });
-        }
-
-        function showValidationErrors(errors) {
-            Object.keys(errors).forEach(field => {
-                const errorElement = document.getElementById(field + 'Error');
-                const inputElement = document.getElementById(field === 'full_name' ? 'fullName' : 
-                                                         field === 'phone_number' ? 'phoneNumber' : 
-                                                         field === 'message' ? 'messageText' : field);
-                
-                if (errorElement && inputElement) {
-                    errorElement.textContent = errors[field][0];
-                    errorElement.style.display = 'block';
-                    inputElement.classList.add('is-invalid');
-                }
-            });
-        }
-
-        function clearAlerts() {
-            alertContainer.innerHTML = '';
-        }
-
-        function showAlert(type, message) {
-            const alertHtml = `
-                <div class="alert alert-${type} alert-dismissible fade show" role="alert">
-                    ${message}
-                    <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
-                </div>
-            `;
-            alertContainer.innerHTML = alertHtml;
-        }
+        });
     });
-    </script>
+</script>
+@endpush
 @endsection
-
-

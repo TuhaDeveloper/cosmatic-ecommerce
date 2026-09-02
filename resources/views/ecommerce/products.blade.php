@@ -1,1864 +1,785 @@
 @extends('ecommerce.master')
 
+@php
+    $currentCategory = $category ?? null;
+    $totalCount = $products->total();
+    $maxPrice = (float)($maxProductPrice ?? 10000);
+    $curMin = (float)($priceMin ?? 0);
+    $curMax = (float)($priceMax && $priceMax != $maxPrice ? $priceMax : $maxPrice);
+@endphp
+
 @section('main-section')
-    <section class="featured-categories pb-2 pb-md-3 pt-3 pt-md-5">
-        <div class="container-fluid px-lg-4 px-xl-5 featured-plain">
-            <h2 class="section-title text-start mb-0">OUR PRODUCTS</h2>
+<div class="bg-stone-50/60 min-h-screen pb-16">
+
+    <!-- 1. Breadcrumbs & Header Banner -->
+    <div class="bg-white border-b border-stone-200/60 py-4">
+        <div class="container mx-auto px-4 max-w-7xl">
+            <div class="flex flex-col md:flex-row md:items-center md:justify-between gap-2">
+                <div>
+                    <h1 class="font-serif text-xl sm:text-2xl font-bold text-gray-900 uppercase tracking-wide mb-1">
+                        {{ $currentCategory ? $currentCategory->name : ($pageTitle ?? 'OUR PRODUCTS') }}
+                    </h1>
+                    <nav class="flex items-center gap-2 text-xs text-stone-500" aria-label="Breadcrumb">
+                        <a href="/" class="hover:text-[#a28e46] transition-colors no-underline">Home</a>
+                        <span class="text-stone-300">/</span>
+                        <a href="{{ route('product.archive') }}" class="hover:text-[#a28e46] transition-colors no-underline">Shop</a>
+                        @if($currentCategory)
+                            <span class="text-stone-300">/</span>
+                            <span class="text-stone-800 font-medium">{{ $currentCategory->name }}</span>
+                        @endif
+                    </nav>
+                </div>
+                
+                <span class="text-xs text-stone-500 font-medium">
+                    Showing <span id="displayedProductsCount" class="font-bold text-stone-800">{{ $products->count() }}</span> of <span id="totalProductsCount" class="font-bold text-stone-800">{{ $totalCount }}</span> items
+                </span>
+            </div>
         </div>
-    </section>
+    </div>
 
-    <div class="container-fluid px-lg-4 px-xl-5 py-2 py-md-4 products-page-wrapper">
-        <style>
-            @media (min-width: 992px) {
-                .products-page-wrapper {
-                    height: auto !important;
-                    overflow: visible !important;
-                    display: block;
-                }
-                .products-main-row {
-                    display: flex;
-                    align-items: flex-start;
-                    position: relative; /* Context for sticky */
-                }
-                .products-sidebar-col {
-                    height: auto !important;
-                    overflow: visible !important;
-                }
-                
-                #filterFormDesktop {
-                    position: -webkit-sticky;
-                    position: sticky;
-                    top: 150px; /* Offset from fixed header */
-                    height: auto !important;
-                    overflow: visible !important;
-                    z-index: 100;
-                    padding-bottom: 20px;
-                    transition: top 0.3s ease-in-out;
+    <!-- 2. Main Shop Layout -->
+    <div class="container mx-auto px-4 max-w-7xl py-6 sm:py-8">
+        <div class="grid grid-cols-1 lg:grid-cols-12 gap-6 lg:gap-8 items-start">
+            
+            <!-- Left: Desktop Sidebar Filters (Cols 3) -->
+            <aside class="hidden lg:block lg:col-span-3 space-y-6 sticky top-24">
+                <div class="bg-white rounded-sm border border-stone-200/80 shadow-sm p-5 space-y-6">
                     
-                    /* Hide scrollbar but keep functionality */
-                    -ms-overflow-style: none !important;
-                    scrollbar-width: none !important;
-                }
-                #filterFormDesktop::-webkit-scrollbar {
-                    display: none !important;
-                }
+                    <!-- Header -->
+                    <div class="flex items-center justify-between pb-3.5 border-b border-stone-200/80">
+                        <span class="font-serif font-bold text-sm text-stone-900 uppercase tracking-wider flex items-center gap-2">
+                            <i class="fa-solid fa-sliders text-[#a28e46] text-xs"></i> Filters
+                        </span>
+                        <button type="button" onclick="clearAllShopFilters()" class="text-[11px] font-semibold text-stone-400 hover:text-[#a28e46] uppercase tracking-wider transition-colors cursor-pointer focus:outline-none">
+                            Clear All
+                        </button>
+                    </div>
+
+                    <!-- In Stock Quick Toggle -->
+                    <div class="flex items-center justify-between py-1 border-b border-stone-100 pb-3.5">
+                        <span class="text-xs font-bold text-stone-800 uppercase tracking-wider">In Stock Only</span>
+                        <label class="relative inline-flex items-center cursor-pointer">
+                            <input type="checkbox" id="filterInStock" class="sr-only peer" {{ !empty($selectedInStock) ? 'checked' : '' }} onchange="applyShopFilters()">
+                            <div class="w-9 h-5 bg-stone-200 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-stone-300 after:border after:rounded-full after:h-4 after:w-4 after:transition-all peer-checked:bg-[#a28e46]"></div>
+                        </label>
+                    </div>
+
+
+
+                    <!-- Progressive Dual-Thumb Price Range Slider -->
+                    <div class="space-y-4 pb-4 border-b border-stone-100">
+                        <div class="flex items-center justify-between">
+                            <h4 class="text-xs font-bold text-stone-800 uppercase tracking-wider">Price Range</h4>
+                            <span id="priceRangeDisplay" class="text-xs font-mono font-bold text-[#a28e46]">
+                                ৳{{ number_format($curMin) }} - ৳{{ number_format($curMax) }}
+                            </span>
+                        </div>
+
+                        <!-- Dual Range Slider Container -->
+                        <div class="relative py-3">
+                            <!-- Track Background -->
+                            <div class="w-full h-1.5 bg-stone-200 rounded-full relative">
+                                <!-- Active Fill Progress Bar -->
+                                <div id="priceRangeTrack" class="absolute h-full bg-[#a28e46] rounded-full" style="left: 0%; right: 0%;"></div>
+                            </div>
+                            
+                            <!-- Left Thumb (Min) Slider -->
+                            <input type="range" id="rangeMin" min="0" max="{{ $maxPrice }}" value="{{ $curMin }}" step="10" 
+                                   class="dual-range-input absolute inset-x-0 top-1/2 -translate-y-1/2 w-full h-1.5 z-20" 
+                                   oninput="updatePriceSlider('min')">
+
+                            <!-- Right Thumb (Max) Slider -->
+                            <input type="range" id="rangeMax" min="0" max="{{ $maxPrice }}" value="{{ $curMax }}" step="10" 
+                                   class="dual-range-input absolute inset-x-0 top-1/2 -translate-y-1/2 w-full h-1.5 z-20" 
+                                   oninput="updatePriceSlider('max')">
+                        </div>
+
+                        <!-- Min & Max Clean Value Boxes (No arrows) -->
+                        <div class="grid grid-cols-2 gap-2.5 pt-1">
+                            <div class="bg-stone-50 border border-stone-200 rounded-sm p-2 text-center transition-colors focus-within:border-[#a28e46] focus-within:bg-white shadow-sm">
+                                <span class="text-[10px] font-bold text-stone-400 block uppercase tracking-wider mb-0.5">Min (৳)</span>
+                                <input type="number" id="filterPriceMin" value="{{ $curMin }}" class="no-spinner w-full text-center text-xs font-bold text-stone-900 bg-transparent outline-none" oninput="syncInputsToSlider()">
+                            </div>
+                            <div class="bg-stone-50 border border-stone-200 rounded-sm p-2 text-center transition-colors focus-within:border-[#a28e46] focus-within:bg-white shadow-sm">
+                                <span class="text-[10px] font-bold text-stone-400 block uppercase tracking-wider mb-0.5">Max (৳)</span>
+                                <input type="number" id="filterPriceMax" value="{{ $curMax }}" class="no-spinner w-full text-center text-xs font-bold text-stone-900 bg-transparent outline-none" oninput="syncInputsToSlider()">
+                            </div>
+                        </div>
+
+                        <!-- Luxury Theme Apply Button -->
+                        <button type="button" onclick="applyShopFilters()" class="w-full bg-[#a28e46] hover:bg-[#8e7b39] text-white font-bold text-xs uppercase tracking-widest py-2.5 rounded-sm shadow-md hover:shadow-lg transition-all cursor-pointer focus:outline-none active:scale-[0.99] flex items-center justify-center gap-1.5">
+                            <i class="fa-solid fa-filter text-[10px]"></i>
+                            <span>Apply Price Filter</span>
+                        </button>
+                    </div>
+
+                    <!-- Category Filter -->
+                    <div class="space-y-3 pb-3.5 border-b border-stone-100">
+                        <h4 class="text-xs font-bold text-stone-800 uppercase tracking-wider">
+                            Categories
+                        </h4>
+                        
+                        <div class="space-y-1.5 max-h-60 overflow-y-auto pr-1 scrollbar-thin text-xs text-stone-600">
+                            @foreach($categories as $cat)
+                                @php
+                                    $isSelected = in_array($cat->slug, $selectedCategories) || (isset($category) && $category->slug === $cat->slug);
+                                    $hasChildren = $cat->children && count($cat->children) > 0;
+                                @endphp
+                                <div class="space-y-1">
+                                    <label class="flex items-center justify-between py-1 group cursor-pointer select-none">
+                                        <span class="flex items-center gap-2">
+                                            <input type="checkbox" 
+                                                   class="rounded border-stone-300 text-[#a28e46] focus:ring-0 cursor-pointer cat-filter-checkbox" 
+                                                   value="{{ $cat->slug }}" 
+                                                   {{ $isSelected ? 'checked' : '' }}
+                                                   onchange="applyShopFilters()">
+                                            <span class="font-medium {{ $isSelected ? 'text-[#a28e46] font-bold' : 'text-stone-700 group-hover:text-[#a28e46]' }} transition-colors">
+                                                {{ $cat->name }}
+                                            </span>
+                                        </span>
+                                        <span class="text-[10px] text-stone-400 font-mono">({{ $cat->products_count ?? $cat->products()->count() }})</span>
+                                    </label>
+
+                                    <!-- Subcategories Tree -->
+                                    @if($hasChildren)
+                                        <div class="pl-4 space-y-1 border-l-2 border-stone-100 ml-1.5 py-0.5">
+                                            @foreach($cat->children as $child)
+                                                @php
+                                                    $isChildSelected = in_array($child->slug, $selectedCategories) || (isset($category) && $category->slug === $child->slug);
+                                                @endphp
+                                                <label class="flex items-center justify-between py-0.5 group cursor-pointer select-none">
+                                                    <span class="flex items-center gap-2">
+                                                        <input type="checkbox" 
+                                                               class="rounded border-stone-300 text-[#a28e46] focus:ring-0 cursor-pointer cat-filter-checkbox" 
+                                                               value="{{ $child->slug }}" 
+                                                               {{ $isChildSelected ? 'checked' : '' }}
+                                                               onchange="applyShopFilters()">
+                                                        <span class="text-stone-600 group-hover:text-[#a28e46] {{ $isChildSelected ? 'text-[#a28e46] font-bold' : '' }} transition-colors">
+                                                            {{ $child->name }}
+                                                        </span>
+                                                    </span>
+                                                    <span class="text-[10px] text-stone-400 font-mono">({{ $child->products_count ?? $child->products()->count() }})</span>
+                                                </label>
+                                            @endforeach
+                                        </div>
+                                    @endif
+                                </div>
+                            @endforeach
+                        </div>
+                    </div>
+
+                    <!-- Brands Filter -->
+                    @if(isset($brands) && count($brands) > 0)
+                    <div class="space-y-3">
+                        <h4 class="text-xs font-bold text-stone-800 uppercase tracking-wider">
+                            Brands
+                        </h4>
+                        <div class="space-y-1.5 max-h-48 overflow-y-auto pr-1 scrollbar-thin text-xs text-stone-600">
+                            @foreach($brands as $br)
+                                @php $isBrandSelected = isset($selectedBrands) && in_array($br->id, $selectedBrands); @endphp
+                                <label class="flex items-center justify-between py-1 group cursor-pointer select-none">
+                                    <span class="flex items-center gap-2">
+                                        <input type="checkbox" 
+                                               class="rounded border-stone-300 text-[#a28e46] focus:ring-0 cursor-pointer brand-filter-checkbox" 
+                                               value="{{ $br->id }}" 
+                                               {{ $isBrandSelected ? 'checked' : '' }}
+                                               onchange="applyShopFilters()">
+                                        <span class="font-medium {{ $isBrandSelected ? 'text-[#a28e46] font-bold' : 'text-stone-700 group-hover:text-[#a28e46]' }} transition-colors">
+                                            {{ $br->name }}
+                                        </span>
+                                    </span>
+                                    <span class="text-[10px] text-stone-400 font-mono">({{ $br->products_count }})</span>
+                                </label>
+                            @endforeach
+                        </div>
+                    </div>
+                    @endif
+
+                </div>
+            </aside>
+
+            <!-- Right: Products Showcase & Controls (Cols 9) -->
+            <main class="lg:col-span-9 space-y-4">
                 
-                .products-grid-col {
-                    height: auto !important;
-                    overflow: visible !important;
-                }
-                
-                /* Ensure no internal scrollbar on the grid */
-                .products-grid-col::-webkit-scrollbar,
-                #products-container::-webkit-scrollbar {
-                    display: none !important;
-                }
+                <!-- Toolbar: Mobile Filter Button & Custom Luxury Sort Dropdown -->
+                <div class="bg-white rounded-sm border border-stone-200/80 shadow-sm p-2.5 sm:px-4 sm:py-3 flex items-center justify-between gap-2.5 sm:gap-4">
+                    
+                    <!-- Mobile Filter Drawer Trigger -->
+                    @php
+                        $activeFilterCount = count($selectedCategories) + (isset($selectedBrands) ? count($selectedBrands) : 0) + (!empty($selectedInStock) ? 1 : 0);
+                    @endphp
+                    <button type="button" 
+                            class="lg:hidden flex-1 sm:flex-initial inline-flex items-center justify-center gap-2 px-3.5 py-2 bg-stone-50 hover:bg-stone-100 text-stone-800 text-xs font-bold uppercase tracking-wider rounded border border-stone-200 hover:border-[#a28e46] transition-all focus:outline-none cursor-pointer shadow-2xs"
+                            onclick="openMobileFilters()">
+                        <i class="fa-solid fa-sliders text-[#a28e46]"></i>
+                        <span>Filters</span>
+                        @if($activeFilterCount > 0)
+                            <span class="bg-[#a28e46] text-white text-[10px] w-4 h-4 rounded-full flex items-center justify-center font-mono font-bold">{{ $activeFilterCount }}</span>
+                        @endif
+                    </button>
 
-                /* Offset for hide-upper-headers (when marquee is hidden) */
-                body.hide-upper-headers #filterFormDesktop {
-                    top: 110px;
-                }
-            }
-        </style>
-        <div class="row products-main-row">
-            <!-- Sidebar Filters (hidden on mobile) -->
-            <div class="col-md-3 mb-4 d-none d-md-block products-sidebar-col">
-                <div id="filterFormDesktop">
-                    <style>
-                        /* SENIOR UI REFINEMENTS */
-                        
-                        .filter-card {
-                            background: #fafafa !important;
-                            border: 1px solid #f1f5f9 !important;
-                            border-radius: 12px !important;
-                            padding: 20px !important;
-                            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05) !important;
-                        }
-                        
-                        .filter-section { border-bottom: 1px solid #f1f5f9; padding-bottom: 20px; margin-bottom: 20px; }
-                        .filter-section:last-child { border-bottom: none; }
-                        
-                        .filter-section-title { 
-                            font-size: 0.85rem !important; 
-                            font-weight: 700 !important; 
-                            color: #1e293b !important; 
-                            text-transform: uppercase; 
-                            letter-spacing: 0.5px; 
-                        }
+                    <div class="hidden sm:block text-xs text-stone-500">
+                        Showing luxury cosmetics catalog
+                    </div>
 
-                        /* Premium Price Styling */
-                        .product-card .current {
-                            font-size: 1.15rem !important;
-                            font-weight: 800 !important;
-                            color: #000 !important;
-                            letter-spacing: -0.2px;
-                        }
-
-                        /* Custom Sort Select */
-                        #sortSelect, #sortSelectMobile {
-                            border-radius: 8px;
-                            border: 1px solid #e2e8f0;
-                            font-size: 14px;
-                            padding: 8px 36px 8px 12px;
-                            background-color: #f8fafc;
-                            cursor: pointer;
-                            transition: all 0.2s ease;
-                        }
-                        #sortSelect:hover { border-color: #00512C; background-color: #fff; }
-
-                        /* Section Title refinement */
-                        .section-title {
-                            font-family: 'Outfit', sans-serif;
-                            font-weight: 800;
-                            letter-spacing: -0.5px;
-                            color: #1e293b;
-                            position: relative;
-                            padding-bottom: 10px;
-                        }
-                        .section-title::after {
-                            content: '';
-                            position: absolute;
-                            bottom: 0;
-                            left: 0;
-                            width: 40px;
-                            height: 3px;
-                            background: #00512C;
-                            border-radius: 2px;
-                        }
-
-                        @media (max-width: 768px) {
-                            .product-card .current { font-size: 1rem !important; }
-                            .section-title { font-size: 1.25rem !important; }
-                        }
-                    </style>
-                    <div class="filter-card">
-                        <div class="filter-header d-flex justify-content-between align-items-center mb-4">
-                            <h5 class="filter-title m-0" style="font-weight: 800; font-size: 1.1rem; color: #1e293b;">
-                                <i class="fas fa-sliders-h me-2 text-primary"></i>Filters
-                            </h5>
-                            <button type="button" class="btn-clear-filters border-0 bg-transparent text-muted small" id="clearFilters" style="font-size: 0.75rem; text-decoration: underline;">
-                                Clear All
+                    <!-- Custom Luxury Sort Dropdown -->
+                    <div class="relative flex-1 sm:flex-initial sm:ml-auto" id="customSortDropdownWrap">
+                        <div class="flex items-center gap-2">
+                            <span class="text-xs font-semibold text-stone-600 uppercase tracking-wider hidden sm:inline-block">SORT BY:</span>
+                            
+                            <!-- Custom Trigger Button -->
+                            <button type="button" 
+                                    id="sortTriggerBtn" 
+                                    class="w-full sm:w-auto inline-flex items-center justify-between gap-2 px-3 sm:px-3.5 py-2 bg-stone-50 hover:bg-white text-stone-800 text-xs font-semibold rounded border border-stone-300 hover:border-[#a28e46] transition-all cursor-pointer focus:outline-none shadow-2xs min-w-0 sm:min-w-[170px]"
+                                    onclick="toggleSortDropdown()">
+                                <span id="currentSortLabel" class="truncate">
+                                    @if($selectedSort == 'price_low' || $selectedSort == 'lowToHigh') Price: Low to High
+                                    @elseif($selectedSort == 'price_high' || $selectedSort == 'highToLow') Price: High to Low
+                                    @elseif($selectedSort == 'popular') Most Popular
+                                    @else Newest Arrivals
+                                    @endif
+                                </span>
+                                <i class="fa-solid fa-chevron-down text-[10px] text-stone-500 transition-transform duration-200 flex-shrink-0" id="sortChevron"></i>
                             </button>
                         </div>
-                    
-                    <!-- Category Filter -->
-                    <div class="filter-section">
-                        <div class="filter-section-header" data-bs-toggle="collapse" data-bs-target="#categoryFilter" aria-expanded="true">
-                            <h6 class="filter-section-title">
-                                <i class="fas fa-tags me-2"></i>Category
-                            </h6>
-                            <i class="fas fa-chevron-down filter-chevron"></i>
-                        </div>
-                        <div class="collapse show" id="categoryFilter">
-                            <div class="filter-options">
-                                <div class="filter-option">
-                                    <input class="filter-checkbox" type="checkbox" name="categories[]" id="catAll" value="all" {{ empty($selectedCategories) ? 'checked' : '' }}>
-                                    <label class="filter-label" for="catAll">
-                                        <span class="checkmark"></span>
-                                        <span class="label-text">All Categories</span>
-                                    </label>
-                                </div>
-                                @foreach ($categories as $category)
-                                    <div class="category-parent-wrapper">
-                                        <div class="filter-option category-parent">
-                                            <input class="filter-checkbox" type="checkbox" name="categories[]" id="{{ $category->slug }}"
-                                                value="{{ $category->slug }}" {{ in_array($category->slug, $selectedCategories ?? []) ? 'checked' : '' }}>
-                                            <label class="filter-label" for="{{ $category->slug }}">
-                                                <span class="checkmark"></span>
-                                                <span class="label-text">{{ $category->name }}</span>
-                                            </label>
-                                            @if($category->children->count() > 0)
-                                                <div class="category-expand-area" data-target="subcat-{{ $category->id }}" role="button" tabindex="0">
-                                                    <span class="category-count-badge">{{ $category->children->count() }}</span>
-                                                    <button type="button" class="category-toggle-btn" data-target="subcat-{{ $category->id }}" aria-label="Toggle subcategories">
-                                                        <i class="fas fa-chevron-right"></i>
-                                                    </button>
-                                                </div>
-                                            @endif
-                                        </div>
-                                        @if($category->children->count() > 0)
-                                            <div class="category-children collapse" id="subcat-{{ $category->id }}">
-                                                @foreach ($category->children as $subcategory)
-                                                    <div class="filter-option category-child">
-                                                        <input class="filter-checkbox" type="checkbox" name="categories[]" id="{{ $subcategory->slug }}"
-                                                            value="{{ $subcategory->slug }}" {{ in_array($subcategory->slug, $selectedCategories ?? []) ? 'checked' : '' }}>
-                                                        <label class="filter-label" for="{{ $subcategory->slug }}">
-                                                            <span class="checkmark"></span>
-                                                            <span class="label-text">{{ $subcategory->name }}</span>
-                                                        </label>
-                                                    </div>
-                                                @endforeach
-                                            </div>
-                                        @endif
-                                    </div>
-                                @endforeach
-                            </div>
-                        </div>
-                    </div>
 
-                    <!-- Price Range Filter -->
-                    <div class="filter-section">
-                        <div class="filter-section-header" data-bs-toggle="collapse" data-bs-target="#priceFilter" aria-expanded="true">
-                            <h6 class="filter-section-title">
-                                <i class="fas fa-dollar-sign me-2"></i>Price Range
-                            </h6>
-                            <i class="fas fa-chevron-down filter-chevron"></i>
-                        </div>
-                        <div class="collapse show" id="priceFilter">
-                            <div class="price-filter-container">
-                                <div class="price-inputs">
-                                    <div class="price-input-group">
-                                        <label class="price-label">Min</label>
-                                        <input type="number" class="price-input" id="priceMinInput" 
-                                               value="{{ $priceMin }}" min="0" max="{{ $maxProductPrice }}">
-                                    </div>
-                                    <div class="price-separator">-</div>
-                                    <div class="price-input-group">
-                                        <label class="price-label">Max</label>
-                                        <input type="number" class="price-input" id="priceMaxInput" 
-                                               value="{{ $priceMax }}" min="0" max="{{ $maxProductPrice }}">
-                                    </div>
-                                </div>
-                                <div id="price-slider" class="price-slider"></div>
-                                <input type="hidden" name="price_min" id="price_min" value="{{ $priceMin }}">
-                                <input type="hidden" name="price_max" id="price_max" value="{{ $priceMax }}">
-                                <div class="price-display">
-                                    <span id="priceMinValue">{{ number_format($priceMin) }}৳</span>
-                                    <span class="price-separator">to</span>
-                                    <span id="priceMaxValue">{{ number_format($priceMax) }}৳</span>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-
-                    <!-- Rating Filter -->
-                    <div class="filter-section">
-                        <div class="filter-section-header" data-bs-toggle="collapse" data-bs-target="#ratingFilter" aria-expanded="true">
-                            <h6 class="filter-section-title">
-                                <i class="fas fa-star me-2"></i>Customer Rating
-                            </h6>
-                            <i class="fas fa-chevron-down filter-chevron"></i>
-                        </div>
-                        <div class="collapse show" id="ratingFilter">
-                            <div class="filter-options">
-                                @for ($i = 5; $i >= 1; $i--)
-                                    <div class="filter-option">
-                                        <input class="filter-checkbox" type="checkbox" name="rating[]" id="rating{{ $i }}" value="{{ $i }}" {{ in_array($i, $selectedRatings ?? []) ? 'checked' : '' }}>
-                                        <label class="filter-label rating-label" for="rating{{ $i }}">
-                                            <span class="checkmark"></span>
-                                            <div class="rating-stars">
-                                                @for ($j = 1; $j <= 5; $j++)
-                                                    <i class="fa{{ $j <= $i ? 's' : 'r' }} fa-star {{ $j <= $i ? 'text-warning' : 'text-muted' }}"></i>
-                                                @endfor
-                                            </div>
-                                            <span class="label-text">& up</span>
-                                        </label>
-                                    </div>
-                                @endfor
-                            </div>
-                        </div>
-                    </div>
-                </div>
-            </div>
-        </div>
-
-        <!-- Product Grid -->
-            <div class="col-md-9 col-12 products-grid-col">
-                <!-- Sticky filter/sort bar for mobile -->
-                <div class="sticky-filter-bar d-md-none">
-                    <div class="d-flex align-items-center gap-2 w-100">
-                        <!-- Mobile filter toggle -->
-                        <button class="btn btn-outline-secondary flex-shrink-0" type="button" data-bs-toggle="offcanvas" data-bs-target="#filtersOffcanvas" aria-controls="filtersOffcanvas">
-                            <i class="fas fa-filter me-1"></i> Filters
-                        </button>
-                        <select class="form-select form-select-sm flex-grow-1" name="sort" id="sortSelectMobile">
-                            <option value="">Sort By</option>
-                            <option value="newest" {{ $selectedSort == 'newest' ? 'selected' : '' }}>Newest</option>
-                            <option value="lowToHigh" {{ $selectedSort == 'lowToHigh' ? 'selected' : '' }}>Price: Low to High</option>
-                            <option value="highToLow" {{ $selectedSort == 'highToLow' ? 'selected' : '' }}>Price: High to Low</option>
-                        </select>
-                    </div>
-                </div>
-                <!-- Desktop filter/sort bar -->
-                <div class="d-flex flex-column flex-md-row justify-content-end align-items-start align-items-md-center mb-3 gap-2 d-none d-md-flex">
-                    <div class="d-flex align-items-center gap-2 w-100 w-md-auto">
-                        <select class="form-select form-select-sm flex-grow-1 flex-md-grow-0" style="width:auto;display:inline-block;min-width:140px;" name="sort"
-                            id="sortSelect">
-                            <option value="">Sort By</option>
-                            <option value="newest" {{ $selectedSort == 'newest' ? 'selected' : '' }}>Newest</option>
-                            <option value="lowToHigh" {{ $selectedSort == 'lowToHigh' ? 'selected' : '' }}>Price: Low to
-                                High</option>
-                            <option value="highToLow" {{ $selectedSort == 'highToLow' ? 'selected' : '' }}>Price: High to
-                                Low</option>
-                        </select>
-                    </div>
-                </div>
-                <div id="products-container" class="row g-2 g-md-4 grid-5 mt-2 mt-md-4" 
-                     data-has-more="{{ $products->hasMorePages() ? 'true' : 'false' }}"
-                     data-current-page="{{ $products->currentPage() }}">
-                    @include('ecommerce.partials.product-grid', ['products' => $products, 'hidePagination' => true])
-                </div>
-                
-                <!-- Load More button for products -->
-                <div id="products-load-more-btn" class="text-center py-4" style="display: {{ $products->hasMorePages() ? 'block' : 'none' }};">
-                    <button class="load-more-btn" onclick="loadMoreProducts()">
-                        <span class="load-more-icon">
-                            <i class="fas fa-arrow-down"></i>
-                        </span>
-                        <span class="load-more-text">Load More Products</span>
-                    </button>
-                </div>
-            </div>
-        </div>
-    </div>
-    
-    <!-- Mobile Offcanvas Filters -->
-    <div class="offcanvas offcanvas-start" tabindex="-1" id="filtersOffcanvas" aria-labelledby="filtersOffcanvasLabel">
-        <div class="offcanvas-header">
-            <h5 class="offcanvas-title" id="filtersOffcanvasLabel"><i class="fas fa-filter me-2"></i>Filters</h5>
-            <button type="button" class="btn-close text-reset" data-bs-dismiss="offcanvas" aria-label="Close"></button>
-        </div>
-        <div class="offcanvas-body">
-            <div id="filterForm" class="">
-                <div class="filter-card">
-                    <div class="filter-header">
-                        <h5 class="filter-title">
-                            <i class="fas fa-filter me-2"></i>Filters
-                        </h5>
-                        <button type="button" class="btn-clear-filters" id="clearFilters">
-                            <i class="fas fa-times"></i> Clear All
-                        </button>
-                    </div>
-                    
-                    <!-- Category Filter -->
-                    <div class="filter-section">
-                        <div class="filter-section-header" data-bs-toggle="collapse" data-bs-target="#categoryFilterMobile" aria-expanded="true">
-                            <h6 class="filter-section-title">
-                                <i class="fas fa-tags me-2"></i>Category
-                            </h6>
-                            <i class="fas fa-chevron-down filter-chevron"></i>
-                        </div>
-                        <div class="collapse show" id="categoryFilterMobile">
-                            <div class="filter-options">
-                                <div class="filter-option">
-                                    <input class="filter-checkbox" type="checkbox" name="categories[]" id="catAllMobile" value="all" {{ empty($selectedCategories) ? 'checked' : '' }}>
-                                    <label class="filter-label" for="catAllMobile">
-                                        <span class="checkmark"></span>
-                                        <span class="label-text">All Categories</span>
-                                    </label>
-                                </div>
-                                @foreach ($categories as $category)
-                                    <div class="category-parent-wrapper">
-                                        <div class="filter-option category-parent">
-                                            <input class="filter-checkbox" type="checkbox" name="categories[]" id="{{ $category->slug }}-m"
-                                                value="{{ $category->slug }}" {{ in_array($category->slug, $selectedCategories ?? []) ? 'checked' : '' }}>
-                                            <label class="filter-label" for="{{ $category->slug }}-m">
-                                                <span class="checkmark"></span>
-                                                <span class="label-text">{{ $category->name }}</span>
-                                            </label>
-                                            @if($category->children->count() > 0)
-                                                <div class="category-expand-area" data-target="subcat-{{ $category->id }}-m" role="button" tabindex="0">
-                                                    <span class="category-count-badge">{{ $category->children->count() }}</span>
-                                                    <button type="button" class="category-toggle-btn" data-target="subcat-{{ $category->id }}-m" aria-label="Toggle subcategories">
-                                                        <i class="fas fa-chevron-right"></i>
-                                                    </button>
-                                                </div>
-                                            @endif
-                                        </div>
-                                        @if($category->children->count() > 0)
-                                            <div class="category-children collapse" id="subcat-{{ $category->id }}-m">
-                                                @foreach ($category->children as $subcategory)
-                                                    <div class="filter-option category-child">
-                                                        <input class="filter-checkbox" type="checkbox" name="categories[]" id="{{ $subcategory->slug }}-m"
-                                                            value="{{ $subcategory->slug }}" {{ in_array($subcategory->slug, $selectedCategories ?? []) ? 'checked' : '' }}>
-                                                        <label class="filter-label" for="{{ $subcategory->slug }}-m">
-                                                            <span class="checkmark"></span>
-                                                            <span class="label-text">{{ $subcategory->name }}</span>
-                                                        </label>
-                                                    </div>
-                                                @endforeach
-                                            </div>
-                                        @endif
-                                    </div>
-                                @endforeach
-                            </div>
-                        </div>
-                    </div>
-
-                    <!-- Price Range Filter -->
-                    <div class="filter-section">
-                        <div class="filter-section-header" data-bs-toggle="collapse" data-bs-target="#priceFilterMobile" aria-expanded="true">
-                            <h6 class="filter-section-title">
-                                <i class="fas fa-dollar-sign me-2"></i>Price Range
-                            </h6>
-                            <i class="fas fa-chevron-down filter-chevron"></i>
-                        </div>
-                        <div class="collapse show" id="priceFilterMobile">
-                            <div class="price-filter-container">
-                                <div class="price-inputs">
-                                    <div class="price-input-group">
-                                        <label class="price-label">Min</label>
-                                        <input type="number" class="price-input" id="priceMinInputMobile" 
-                                               value="{{ $priceMin }}" min="0" max="{{ $maxProductPrice }}">
-                                    </div>
-                                    <div class="price-separator">-</div>
-                                    <div class="price-input-group">
-                                        <label class="price-label">Max</label>
-                                        <input type="number" class="price-input" id="priceMaxInputMobile" 
-                                               value="{{ $priceMax }}" min="0" max="{{ $maxProductPrice }}">
-                                    </div>
-                                </div>
-                                <div id="price-slider-mobile" class="price-slider"></div>
-                                <input type="hidden" name="price_min" id="price_min_mobile" value="{{ $priceMin }}">
-                                <input type="hidden" name="price_max" id="price_max_mobile" value="{{ $priceMax }}">
-                                <div class="price-display">
-                                    <span id="priceMinValueMobile">{{ number_format($priceMin) }}৳</span>
-                                    <span class="price-separator">to</span>
-                                    <span id="priceMaxValueMobile">{{ number_format($priceMax) }}৳</span>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-
-                    <!-- Rating Filter -->
-                    <div class="filter-section">
-                        <div class="filter-section-header" data-bs-toggle="collapse" data-bs-target="#ratingFilterMobile" aria-expanded="true">
-                            <h6 class="filter-section-title">
-                                <i class="fas fa-star me-2"></i>Customer Rating
-                            </h6>
-                            <i class="fas fa-chevron-down filter-chevron"></i>
-                        </div>
-                        <div class="collapse show" id="ratingFilterMobile">
-                            <div class="filter-options">
-                                @for ($i = 5; $i >= 1; $i--)
-                                    <div class="filter-option">
-                                        <input class="filter-checkbox" type="checkbox" name="rating[]" id="ratingM{{ $i }}" value="{{ $i }}" {{ in_array($i, $selectedRatings ?? []) ? 'checked' : '' }}>
-                                        <label class="filter-label rating-label" for="ratingM{{ $i }}">
-                                            <span class="checkmark"></span>
-                                            <div class="rating-stars">
-                                                @for ($j = 1; $j <= 5; $j++)
-                                                    <i class="fa{{ $j <= $i ? 's' : 'r' }} fa-star {{ $j <= $i ? 'text-warning' : 'text-muted' }}"></i>
-                                                @endfor
-                                            </div>
-                                            <span class="label-text">& up</span>
-                                        </label>
-                                    </div>
-                                @endfor
-                            </div>
+                        <!-- Custom Dropdown Menu -->
+                        <div id="sortMenuPanel" class="hidden absolute right-0 mt-1.5 w-48 sm:w-52 bg-white rounded border border-stone-200 shadow-xl py-1 z-30 text-xs transition-all">
+                            <button type="button" class="w-full text-left px-3.5 py-2 hover:bg-[#faf7f0] hover:text-[#a28e46] flex items-center justify-between font-medium text-stone-700 cursor-pointer focus:outline-none {{ $selectedSort == 'newest' ? 'text-[#a28e46] font-bold bg-[#faf7f0]' : '' }}" onclick="selectSortOption('newest', 'Newest Arrivals')">
+                                <span>Newest Arrivals</span>
+                                @if($selectedSort == 'newest') <i class="fa-solid fa-check text-[10px] text-[#a28e46]"></i> @endif
+                            </button>
+                            <button type="button" class="w-full text-left px-3.5 py-2 hover:bg-[#faf7f0] hover:text-[#a28e46] flex items-center justify-between font-medium text-stone-700 cursor-pointer focus:outline-none {{ in_array($selectedSort, ['price_low', 'lowToHigh']) ? 'text-[#a28e46] font-bold bg-[#faf7f0]' : '' }}" onclick="selectSortOption('price_low', 'Price: Low to High')">
+                                <span>Price: Low to High</span>
+                                @if(in_array($selectedSort, ['price_low', 'lowToHigh'])) <i class="fa-solid fa-check text-[10px] text-[#a28e46]"></i> @endif
+                            </button>
+                            <button type="button" class="w-full text-left px-3.5 py-2 hover:bg-[#faf7f0] hover:text-[#a28e46] flex items-center justify-between font-medium text-stone-700 cursor-pointer focus:outline-none {{ in_array($selectedSort, ['price_high', 'highToLow']) ? 'text-[#a28e46] font-bold bg-[#faf7f0]' : '' }}" onclick="selectSortOption('price_high', 'Price: High to Low')">
+                                <span>Price: High to Low</span>
+                                @if(in_array($selectedSort, ['price_high', 'highToLow'])) <i class="fa-solid fa-check text-[10px] text-[#a28e46]"></i> @endif
+                            </button>
+                            <button type="button" class="w-full text-left px-3.5 py-2 hover:bg-[#faf7f0] hover:text-[#a28e46] flex items-center justify-between font-medium text-stone-700 cursor-pointer focus:outline-none {{ $selectedSort == 'popular' ? 'text-[#a28e46] font-bold bg-[#faf7f0]' : '' }}" onclick="selectSortOption('popular', 'Most Popular')">
+                                <span>Most Popular</span>
+                                @if($selectedSort == 'popular') <i class="fa-solid fa-check text-[10px] text-[#a28e46]"></i> @endif
+                            </button>
                         </div>
                     </div>
 
                 </div>
-            </div>
+
+                <!-- Products Grid Container -->
+                <div id="shopProductsContainer" class="min-h-[400px] relative">
+                    <!-- Loading Spinner Overlay -->
+                    <div id="shopLoadingOverlay" class="absolute inset-0 bg-white/70 backdrop-blur-[1px] z-20 hidden flex items-center justify-center">
+                        <div class="w-10 h-10 border-3 border-stone-200 border-t-[#a28e46] rounded-full animate-spin"></div>
+                    </div>
+
+                    @include('ecommerce.partials.product-grid')
+                </div>
+
+            </main>
+
         </div>
     </div>
 
-@endsection
+</div>
 
-@push('scripts')
-    <script>
+<!-- Mobile Filter Drawer Modal -->
+<div id="mobileFilterDrawer" class="fixed inset-0 bg-black/60 backdrop-blur-[2px] z-[26000] opacity-0 pointer-events-none transition-opacity duration-300 flex">
+    <div id="mobileFilterPanel" class="w-80 max-w-[85vw] h-full bg-white shadow-2xl flex flex-col transform -translate-x-full transition-transform duration-300 ease-out z-[26001]">
+        
+        <!-- Header -->
+        <div class="p-4 bg-gradient-to-r from-[#a28e46] to-[#8e7b39] text-white flex items-center justify-between shadow-sm flex-shrink-0">
+            <span class="font-serif font-bold text-sm uppercase tracking-wider flex items-center gap-2">
+                <i class="fa-solid fa-sliders"></i> Filter Products
+            </span>
+            <button type="button" class="w-7 h-7 rounded-full bg-white/20 text-white flex items-center justify-center cursor-pointer focus:outline-none" onclick="closeMobileFilters()">
+                <i class="fa-solid fa-xmark text-xs"></i>
+            </button>
+        </div>
 
+        <!-- Scrollable Filter Content -->
+        <div class="flex-grow overflow-y-auto p-4 space-y-6 text-xs">
+            
+            <!-- In Stock Quick Toggle -->
+            <div class="flex items-center justify-between py-1 border-b border-stone-100 pb-3">
+                <span class="font-bold text-stone-800 uppercase tracking-wider">In Stock Only</span>
+                <label class="relative inline-flex items-center cursor-pointer">
+                    <input type="checkbox" id="mobileFilterInStock" class="sr-only peer" {{ !empty($selectedInStock) ? 'checked' : '' }}>
+                    <div class="w-9 h-5 bg-stone-200 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-stone-300 after:border after:rounded-full after:h-4 after:w-4 after:transition-all peer-checked:bg-[#a28e46]"></div>
+                </label>
+            </div>
 
-        // AJAX Filtering Function
-        function getActiveFilterRoot(){
-            var desktop = document.getElementById('filterFormDesktop');
-            var mobile = document.getElementById('filterForm');
-            // Prefer the visible container
-            if (desktop && desktop.offsetParent !== null) return desktop;
-            if (mobile && mobile.offsetParent !== null) return mobile;
-            return desktop || mobile;
+            <!-- Price Range Dual-Thumb Progress Bar Slider -->
+            <div class="space-y-3 pt-1 border-b border-stone-100 pb-4">
+                <div class="flex items-center justify-between">
+                    <h4 class="font-bold text-stone-800 uppercase tracking-wider">Price Range</h4>
+                    <span id="mobilePriceRangeDisplay" class="text-xs font-mono font-bold text-[#a28e46]">
+                        ৳{{ number_format($curMin) }} - ৳{{ number_format($curMax) }}
+                    </span>
+                </div>
+
+                <!-- Dual Range Slider Container -->
+                <div class="relative py-2.5">
+                    <!-- Track Background -->
+                    <div class="w-full h-1.5 bg-stone-200 rounded-full relative">
+                        <!-- Active Fill Progress Bar -->
+                        <div id="mobilePriceRangeTrack" class="absolute h-full bg-[#a28e46] rounded-full" style="left: 0%; right: 0%;"></div>
+                    </div>
+                    
+                    <!-- Left Thumb (Min) Slider -->
+                    <input type="range" id="mobileRangeMin" min="0" max="{{ $maxPrice }}" value="{{ $curMin }}" step="10" 
+                           class="dual-range-input absolute inset-x-0 top-1/2 -translate-y-1/2 w-full h-1.5 z-20" 
+                           oninput="updateMobilePriceSlider('min')">
+
+                    <!-- Right Thumb (Max) Slider -->
+                    <input type="range" id="mobileRangeMax" min="0" max="{{ $maxPrice }}" value="{{ $curMax }}" step="10" 
+                           class="dual-range-input absolute inset-x-0 top-1/2 -translate-y-1/2 w-full h-1.5 z-20" 
+                           oninput="updateMobilePriceSlider('max')">
+                </div>
+
+                <div class="grid grid-cols-2 gap-2 pt-0.5">
+                    <div class="bg-stone-50 border border-stone-200 rounded-sm p-1.5 text-center">
+                        <span class="text-[9px] font-bold text-stone-400 block uppercase tracking-wider mb-0.5">Min (৳)</span>
+                        <input type="number" id="mobilePriceMin" value="{{ $curMin }}" class="no-spinner w-full text-center text-xs font-bold text-stone-900 bg-transparent outline-none" oninput="syncMobileInputsToSlider()">
+                    </div>
+                    <div class="bg-stone-50 border border-stone-200 rounded-sm p-1.5 text-center">
+                        <span class="text-[9px] font-bold text-stone-400 block uppercase tracking-wider mb-0.5">Max (৳)</span>
+                        <input type="number" id="mobilePriceMax" value="{{ $curMax }}" class="no-spinner w-full text-center text-xs font-bold text-stone-900 bg-transparent outline-none" oninput="syncMobileInputsToSlider()">
+                    </div>
+                </div>
+            </div>
+
+            <!-- Category List -->
+            <div class="space-y-2 border-b border-stone-100 pb-4">
+                <h4 class="font-bold text-stone-800 uppercase tracking-wider">Categories</h4>
+                <div class="space-y-1.5 max-h-56 overflow-y-auto pr-1">
+                    @foreach($categories as $cat)
+                        @php 
+                            $isSelected = in_array($cat->slug, $selectedCategories) || (isset($category) && $category->slug === $cat->slug);
+                            $hasChildren = $cat->children && count($cat->children) > 0;
+                        @endphp
+                        <div class="space-y-1">
+                            <label class="flex items-center justify-between py-1 cursor-pointer select-none">
+                                <span class="flex items-center gap-2">
+                                    <input type="checkbox" class="rounded border-stone-300 text-[#a28e46] focus:ring-0 mobile-cat-checkbox" value="{{ $cat->slug }}" {{ $isSelected ? 'checked' : '' }}>
+                                    <span class="font-medium {{ $isSelected ? 'text-[#a28e46] font-bold' : 'text-stone-700' }}">{{ $cat->name }}</span>
+                                </span>
+                                <span class="text-[10px] text-stone-400 font-mono">({{ $cat->products_count ?? $cat->products()->count() }})</span>
+                            </label>
+
+                            <!-- Mobile Subcategories Tree -->
+                            @if($hasChildren)
+                                <div class="pl-4 space-y-1 border-l-2 border-stone-100 ml-1.5 py-0.5">
+                                    @foreach($cat->children as $child)
+                                        @php $isChildSelected = in_array($child->slug, $selectedCategories) || (isset($category) && $category->slug === $child->slug); @endphp
+                                        <label class="flex items-center justify-between py-0.5 cursor-pointer select-none">
+                                            <span class="flex items-center gap-2">
+                                                <input type="checkbox" class="rounded border-stone-300 text-[#a28e46] focus:ring-0 mobile-cat-checkbox" value="{{ $child->slug }}" {{ $isChildSelected ? 'checked' : '' }}>
+                                                <span class="{{ $isChildSelected ? 'text-[#a28e46] font-bold' : 'text-stone-600' }}">{{ $child->name }}</span>
+                                            </span>
+                                            <span class="text-[10px] text-stone-400 font-mono">({{ $child->products_count ?? $child->products()->count() }})</span>
+                                        </label>
+                                    @endforeach
+                                </div>
+                            @endif
+                        </div>
+                    @endforeach
+                </div>
+            </div>
+
+            <!-- Brands List -->
+            @if(isset($brands) && count($brands) > 0)
+            <div class="space-y-2">
+                <h4 class="font-bold text-stone-800 uppercase tracking-wider">Brands</h4>
+                <div class="space-y-1.5 max-h-44 overflow-y-auto pr-1">
+                    @foreach($brands as $br)
+                        @php $isBrandSelected = isset($selectedBrands) && in_array($br->id, $selectedBrands); @endphp
+                        <label class="flex items-center justify-between py-1 cursor-pointer select-none">
+                            <span class="flex items-center gap-2">
+                                <input type="checkbox" class="rounded border-stone-300 text-[#a28e46] focus:ring-0 mobile-brand-checkbox" value="{{ $br->id }}" {{ $isBrandSelected ? 'checked' : '' }}>
+                                <span class="font-medium {{ $isBrandSelected ? 'text-[#a28e46] font-bold' : 'text-stone-700' }}">{{ $br->name }}</span>
+                            </span>
+                            <span class="text-[10px] text-stone-400 font-mono">({{ $br->products_count }})</span>
+                        </label>
+                    @endforeach
+                </div>
+            </div>
+            @endif
+
+        </div>
+
+        <!-- Sticky Bottom Apply Button -->
+        <div class="p-4 bg-stone-50 border-t border-stone-200 flex-shrink-0 space-y-2">
+            <button type="button" class="w-full bg-[#a28e46] hover:bg-[#8e7b39] text-white font-bold text-xs uppercase tracking-widest py-3 px-4 rounded shadow-md transition-colors cursor-pointer focus:outline-none" onclick="applyMobileFiltersAndClose()">
+                APPLY FILTERS
+            </button>
+            <button type="button" onclick="clearAllShopFilters()" class="w-full text-center text-[11px] font-semibold text-stone-500 hover:text-[#a28e46] uppercase tracking-wider cursor-pointer">
+                Reset All Filters
+            </button>
+        </div>
+
+    </div>
+</div>
+
+<script>
+    let currentSort = @json($selectedSort ?? 'newest');
+    const maxProductPriceLimit = {{ (float)$maxPrice }};
+
+    // Custom Sort Dropdown Handler
+    function toggleSortDropdown() {
+        const menu = document.getElementById('sortMenuPanel');
+        const chevron = document.getElementById('sortChevron');
+        if (!menu) return;
+        const isHidden = menu.classList.contains('hidden');
+        if (isHidden) {
+            menu.classList.remove('hidden');
+            if (chevron) chevron.classList.add('rotate-180');
+        } else {
+            menu.classList.add('hidden');
+            if (chevron) chevron.classList.remove('rotate-180');
+        }
+    }
+
+    function selectSortOption(sortVal, label) {
+        currentSort = sortVal;
+        const labelEl = document.getElementById('currentSortLabel');
+        if (labelEl) labelEl.textContent = label;
+        
+        const menu = document.getElementById('sortMenuPanel');
+        if (menu) menu.classList.add('hidden');
+        const chevron = document.getElementById('sortChevron');
+        if (chevron) chevron.classList.remove('rotate-180');
+
+        applyShopFilters();
+    }
+
+    // Close sort dropdown when clicking outside
+    document.addEventListener('click', (e) => {
+        const wrap = document.getElementById('customSortDropdownWrap');
+        if (wrap && !wrap.contains(e.target)) {
+            const menu = document.getElementById('sortMenuPanel');
+            const chevron = document.getElementById('sortChevron');
+            if (menu) menu.classList.add('hidden');
+            if (chevron) chevron.classList.remove('rotate-180');
+        }
+    });
+
+    // Dual Range Slider Sync
+    function updatePriceSlider(source) {
+        const rMin = document.getElementById('rangeMin');
+        const rMax = document.getElementById('rangeMax');
+        const inMin = document.getElementById('filterPriceMin');
+        const inMax = document.getElementById('filterPriceMax');
+        const track = document.getElementById('priceRangeTrack');
+        const display = document.getElementById('priceRangeDisplay');
+
+        if (!rMin || !rMax) return;
+
+        let minVal = parseInt(rMin.value) || 0;
+        let maxVal = parseInt(rMax.value) || 0;
+
+        const minGap = 10;
+        if (maxVal - minVal < minGap) {
+            if (source === 'min') {
+                minVal = Math.max(0, maxVal - minGap);
+                rMin.value = minVal;
+            } else if (source === 'max') {
+                maxVal = Math.min(maxProductPriceLimit, minVal + minGap);
+                rMax.value = maxVal;
+            }
         }
 
-        // Infinite scroll state
-        var infiniteScrollState = {
-            currentPage: 1,
-            isLoading: false,
-            hasMore: true,
-            loadingElement: null
-        };
+        if (inMin) inMin.value = minVal;
+        if (inMax) inMax.value = maxVal;
 
-        // Create loading indicator element
-        function createLoadingIndicator() {
-            if (infiniteScrollState.loadingElement) {
-                return infiniteScrollState.loadingElement;
-            }
-            var loadingDiv = document.createElement('div');
-            loadingDiv.className = 'col-12 text-center py-4 infinite-scroll-loader';
-            loadingDiv.style.display = 'none';
-            loadingDiv.innerHTML = '<i class="fas fa-spinner fa-spin fa-2x text-primary"></i><p class="mt-2 text-muted">Loading more products...</p>';
-            infiniteScrollState.loadingElement = loadingDiv;
-            return loadingDiv;
+        const leftPct = Math.min(100, Math.max(0, (minVal / maxProductPriceLimit) * 100));
+        const rightPct = Math.min(100, Math.max(0, 100 - ((maxVal / maxProductPriceLimit) * 100)));
+
+        if (track) {
+            track.style.left = `${leftPct}%`;
+            track.style.right = `${rightPct}%`;
         }
 
-        // Get filter data as URLSearchParams (simpler, works like pagination)
-        function getFilterFormData(page) {
-            var params = new URLSearchParams();
-            var filterRoot = getActiveFilterRoot();
-            
-            // Get selected categories from checkboxes FIRST (user's active filter choice)
-            var selectedCategories = [];
-            var allCategorySelected = false;
-            
-            if (filterRoot) {
-                // Check if "All Categories" is selected
-                var allCategoryCheckbox = filterRoot.querySelector('#catAll, #catAllMobile');
-                if (allCategoryCheckbox && allCategoryCheckbox.checked) {
-                    allCategorySelected = true;
-                }
-                
-                // Get other selected categories (excluding "all")
-                if (!allCategorySelected) {
-                    filterRoot.querySelectorAll('input[type=checkbox][name="categories[]"]:checked').forEach(function(cb) {
-                        if (cb.value !== 'all') {
-                            selectedCategories.push(cb.value);
-                        }
-                    });
-                }
+        if (display) {
+            display.textContent = `৳${minVal.toLocaleString()} - ৳${maxVal.toLocaleString()}`;
+        }
+    }
+
+    function syncInputsToSlider() {
+        const inMin = document.getElementById('filterPriceMin');
+        const inMax = document.getElementById('filterPriceMax');
+        const rMin = document.getElementById('rangeMin');
+        const rMax = document.getElementById('rangeMax');
+
+        if (!inMin || !inMax || !rMin || !rMax) return;
+
+        let minVal = parseInt(inMin.value) || 0;
+        let maxVal = parseInt(inMax.value) || maxProductPriceLimit;
+
+        if (minVal < 0) minVal = 0;
+        if (maxVal > maxProductPriceLimit) maxVal = maxProductPriceLimit;
+
+        rMin.value = minVal;
+        rMax.value = maxVal;
+        updatePriceSlider();
+    }
+
+    // Mobile Dual Range Slider Sync
+    function updateMobilePriceSlider(source) {
+        const rMin = document.getElementById('mobileRangeMin');
+        const rMax = document.getElementById('mobileRangeMax');
+        const inMin = document.getElementById('mobilePriceMin');
+        const inMax = document.getElementById('mobilePriceMax');
+        const track = document.getElementById('mobilePriceRangeTrack');
+        const display = document.getElementById('mobilePriceRangeDisplay');
+
+        if (!rMin || !rMax) return;
+
+        let minVal = parseInt(rMin.value) || 0;
+        let maxVal = parseInt(rMax.value) || 0;
+
+        const minGap = 10;
+        if (maxVal - minVal < minGap) {
+            if (source === 'min') {
+                minVal = Math.max(0, maxVal - minGap);
+                rMin.value = minVal;
+            } else if (source === 'max') {
+                maxVal = Math.min(maxProductPriceLimit, minVal + minGap);
+                rMax.value = maxVal;
             }
-            
-            // Priority logic:
-            // 1. If "All Categories" is selected → Don't send any category filter (show all products)
-            // 2. If specific categories are selected → Use those
-            // 3. Otherwise → Use URL category (from navigation links)
-            if (allCategorySelected) {
-                // "All Categories" selected - don't send any category filter
-                // This will show all products regardless of category
-            } else if (selectedCategories.length > 0) {
-                // User selected specific categories via checkboxes - use those
-                selectedCategories.forEach(function(cat) {
-                    params.append('categories[]', cat);
-                });
-            } else {
-                // No checkboxes selected - use URL category if present (from nav links)
-                var urlParams = new URLSearchParams(window.location.search);
-                var urlCategory = urlParams.get('category');
-                if (urlCategory && urlCategory !== 'null' && urlCategory !== '') {
-                    params.append('category', urlCategory);
-                }
-            }
-            
-            // Get price range
-            var priceMinEl = filterRoot ? (filterRoot.querySelector('#price_min') || filterRoot.querySelector('#price_min_mobile')) : null;
-            var priceMaxEl = filterRoot ? (filterRoot.querySelector('#price_max') || filterRoot.querySelector('#price_max_mobile')) : null;
-            var priceMin = priceMinEl ? priceMinEl.value : '';
-            var priceMax = priceMaxEl ? priceMaxEl.value : '';
-            if (priceMin) params.append('price_min', priceMin);
-            if (priceMax) params.append('price_max', priceMax);
-            
-            // Get selected ratings
-            if (filterRoot) {
-                filterRoot.querySelectorAll('input[type=checkbox][name="rating[]"]:checked').forEach(function(cb) {
-                    params.append('rating[]', cb.value);
-                });
-            }
-            
-            // Get sort option (check both desktop and mobile)
-            var sortSelect = document.getElementById('sortSelect');
-            var sortSelectMobile = document.getElementById('sortSelectMobile');
-            var sortValue = (sortSelect && sortSelect.value) ? sortSelect.value : 
-                           (sortSelectMobile && sortSelectMobile.value) ? sortSelectMobile.value : null;
-            if (sortValue) {
-                params.append('sort', sortValue);
-            }
-            
-            // Add page and infinite scroll
-            if (page) params.append('page', page);
-            params.append('infinite_scroll', 'true');
-            
-            return params;
         }
 
-        // Load more products for infinite scroll
-        function loadMoreProducts() {
-            if (infiniteScrollState.isLoading || !infiniteScrollState.hasMore) {
-                console.log('Skipping load - isLoading:', infiniteScrollState.isLoading, 'hasMore:', infiniteScrollState.hasMore);
-                return;
-            }
-            
-            infiniteScrollState.isLoading = true;
-            var container = document.getElementById('products-container');
-            if (!container) {
-                console.error('Container not found!');
-                infiniteScrollState.isLoading = false;
-                return;
-            }
-            
-            // Show loading indicator
-            var loadingIndicator = createLoadingIndicator();
-            if (!container.contains(loadingIndicator)) {
-                container.appendChild(loadingIndicator);
-            }
-            loadingIndicator.style.display = 'block';
-            
-            // Show load more button with loading state
-            var loadMoreBtn = document.getElementById('products-load-more-btn');
-            var loadMoreButton = loadMoreBtn ? loadMoreBtn.querySelector('.load-more-btn') : null;
-            
-            // Add loading state to button
-            if (loadMoreButton) {
-                loadMoreButton.classList.add('loading');
-                loadMoreButton.disabled = true;
-            }
-            
-            if (loadMoreBtn) {
-                loadMoreBtn.style.display = 'block';
-            }
-            
-            // Get next page
-            var nextPage = infiniteScrollState.currentPage + 1;
-            var params = getFilterFormData(nextPage);
-            
-            // Try fetch first, fallback to XMLHttpRequest if blocked
-            var fetchPromise = fetch('{{ route("products.filter") }}', {
-                method: 'POST',
-                headers: {
-                    'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content'),
-                    'X-Requested-With': 'XMLHttpRequest',
-                    'Accept': 'application/json',
-                    'Content-Type': 'application/x-www-form-urlencoded; charset=UTF-8'
-                },
-                credentials: 'same-origin',
-                body: params.toString()
-            }).catch(function(error) {
-                // If fetch is blocked, try XMLHttpRequest
-                console.warn('Fetch blocked, trying XMLHttpRequest fallback:', error);
-                return new Promise(function(resolve, reject) {
-                    var xhr = new XMLHttpRequest();
-                    xhr.open('POST', '{{ route("products.filter") }}', true);
-                    xhr.setRequestHeader('X-Requested-With', 'XMLHttpRequest');
-                    xhr.setRequestHeader('Accept', 'application/json');
-                    xhr.setRequestHeader('Content-Type', 'application/x-www-form-urlencoded; charset=UTF-8');
-                    xhr.setRequestHeader('X-CSRF-TOKEN', document.querySelector('meta[name="csrf-token"]').getAttribute('content'));
-                    xhr.onload = function() {
-                        if (xhr.status >= 200 && xhr.status < 300) {
-                            resolve({
-                                ok: true,
-                                status: xhr.status,
-                                json: function() { return Promise.resolve(JSON.parse(xhr.responseText)); },
-                                text: function() { return Promise.resolve(xhr.responseText); }
-                            });
-                        } else {
-                            reject(new Error('HTTP ' + xhr.status + ': ' + xhr.statusText));
-                        }
-                    };
-                    xhr.onerror = function() {
-                        reject(new Error('Network error'));
-                    };
-                    xhr.send(params.toString());
-                });
-            });
-            
-            fetchPromise
-            .then(function(response) {
-                console.log('Response received, status:', response.status);
-                // Check if response is ok (status 200-299)
-                if (!response.ok) {
-                    return response.json().then(function(err) {
-                        throw new Error(err.message || 'An error occurred while loading products');
-                    }).catch(function() {
-                        throw new Error('Server error. Please try again.');
-                    });
-                }
-                // Try to parse as JSON first
-                return response.json().catch(function(error) {
-                    // If JSON parsing fails, try to get text to see what we got
-                    console.error('Failed to parse JSON, trying text:', error);
-                    return response.text().then(function(text) {
-                        console.error('Response is not JSON, got:', text.substring(0, 200));
-                        // Try to parse as JSON manually if it looks like JSON
-                        try {
-                            return JSON.parse(text);
-                        } catch (e) {
-                            throw new Error('Server returned non-JSON response');
-                        }
-                    });
-                });
-            })
-            .then(function(data) {
-                console.log('Response data received:', {
-                    success: data.success,
-                    hasHtml: !!data.html,
-                    htmlLength: data.html ? data.html.length : 0,
-                    count: data.count,
-                    total: data.total,
-                    hasMore: data.hasMore,
-                    currentPage: data.currentPage
-                });
-                
-                loadingIndicator.style.display = 'none';
-                infiniteScrollState.isLoading = false;
-                
-                // Remove loading state from button
-                var loadMoreButton = loadMoreBtn ? loadMoreBtn.querySelector('.load-more-btn') : null;
-                if (loadMoreButton) {
-                    loadMoreButton.classList.remove('loading');
-                    loadMoreButton.disabled = false;
-                }
-                
-                // Show/hide load more button based on hasMore
-                if (loadMoreBtn && data.hasMore) {
-                    loadMoreBtn.style.display = 'block';
-                } else if (loadMoreBtn) {
-                    loadMoreBtn.style.display = 'none';
-                }
-                
-                if (data.success && data.html) {
-                    // Extract product cards from the response HTML
-                    var tempDiv = document.createElement('div');
-                    tempDiv.innerHTML = data.html;
-                    // Get all col-* divs that contain product cards (exclude no-products-container)
-                    var productContainers = Array.from(tempDiv.querySelectorAll('.col-lg-3, .col-md-6, .col-6, [class*="col-"]'))
-                        .filter(function(col) {
-                            // Only include if it contains a product-card, not no-products-container
-                            return col.querySelector('.product-card') && !col.querySelector('.no-products-container');
-                        });
-                    
-                    if (productContainers.length > 0) {
-                        // Get existing product IDs to avoid duplicates
-                        var existingProductIds = new Set();
-                        container.querySelectorAll('.col-lg-3, .col-md-6, .col-6, [class*="col-"]').forEach(function(col) {
-                            var productId = col.querySelector('.wishlist-btn[data-product-id]')?.getAttribute('data-product-id') ||
-                                          col.querySelector('.btn-add-cart[data-product-id]')?.getAttribute('data-product-id');
-                            if (productId) {
-                                existingProductIds.add(productId);
-                            }
-                        });
-                        
-                        // Append new products to container (avoid duplicates)
-                        var addedCount = 0;
-                        productContainers.forEach(function(cardContainer) {
-                            var productId = cardContainer.querySelector('.wishlist-btn[data-product-id]')?.getAttribute('data-product-id') ||
-                                          cardContainer.querySelector('.btn-add-cart[data-product-id]')?.getAttribute('data-product-id');
-                            if (!productId || !existingProductIds.has(productId)) {
-                                container.insertBefore(cardContainer, loadingIndicator);
-                                if (productId) {
-                                    existingProductIds.add(productId);
-                                }
-                                addedCount++;
-                            }
-                        });
-                        
-                        // If no products were added (all duplicates), mark as no more
-                        if (addedCount === 0) {
-                            infiniteScrollState.hasMore = false;
-                            if (container) {
-                                container.setAttribute('data-has-more', 'false');
-                            }
-                            if (loadMoreBtn) {
-                                loadMoreBtn.style.display = 'none';
-                            }
-                            console.log('All products were duplicates, no more to load');
-                            return;
-                        }
-                        
-                        // Update state and container data attributes
-                        infiniteScrollState.currentPage = nextPage;
-                        infiniteScrollState.hasMore = data.hasMore !== undefined ? data.hasMore : false;
-                        
-                        // Also check if we got fewer products than expected (might be last page)
-                        if (productContainers.length < 20) {
-                            infiniteScrollState.hasMore = false;
-                        }
-                        
-                        if (container) {
-                            container.setAttribute('data-has-more', infiniteScrollState.hasMore ? 'true' : 'false');
-                            container.setAttribute('data-current-page', nextPage);
-                        }
-                        
-                        // Show/hide load more button
-                        if (loadMoreBtn) {
-                            if (infiniteScrollState.hasMore) {
-                                loadMoreBtn.style.display = 'block';
-                            } else {
-                                loadMoreBtn.style.display = 'none';
-                            }
-                        }
-                        
-                        console.log('Loaded ' + addedCount + ' new products (total in response: ' + productContainers.length + '). Has more: ' + infiniteScrollState.hasMore);
-                    } else {
-                        // No products found in response
-                        infiniteScrollState.hasMore = false;
-                        if (container) {
-                            container.setAttribute('data-has-more', 'false');
-                        }
-                        if (loadMoreBtn) {
-                            loadMoreBtn.style.display = 'none';
-                        }
-                        console.log('No products found in response');
-                    }
-                } else {
-                    // Response was not successful or missing HTML
-                    infiniteScrollState.hasMore = false;
-                    if (container) {
-                        container.setAttribute('data-has-more', 'false');
-                    }
-                    if (loadMoreBtn) {
-                        loadMoreBtn.style.display = 'none';
-                    }
-                    console.error('Invalid response:', data);
-                }
-            })
-            .catch(function(error) {
-                console.error('Load more products error:', error);
-                console.error('Error details:', {
-                    name: error.name,
-                    message: error.message
-                });
-                
-                loadingIndicator.style.display = 'none';
-                infiniteScrollState.isLoading = false;
-                
-                // Remove loading state from button
-                var loadMoreBtn = document.getElementById('products-load-more-btn');
-                var loadMoreButton = loadMoreBtn ? loadMoreBtn.querySelector('.load-more-btn') : null;
-                if (loadMoreButton) {
-                    loadMoreButton.classList.remove('loading');
-                    loadMoreButton.disabled = false;
-                }
-                
-                // Handle specific error types
-                if (error.message && (error.message.includes('404') || error.message.includes('Blocked'))) {
-                    infiniteScrollState.hasMore = false;
-                    if (container) {
-                        container.setAttribute('data-has-more', 'false');
-                    }
-                    if (loadMoreBtn) {
-                        loadMoreBtn.style.display = 'none';
-                    }
-                    console.log('No more pages available or request blocked');
-                } else if (error.message && error.message.includes('Network error')) {
-                    // Network error - don't disable, user can retry by scrolling
-                    console.warn('Network error, will retry on next scroll');
-                } else {
-                    // Other errors - disable to prevent infinite retries
-                    infiniteScrollState.hasMore = false;
-                    if (container) {
-                        container.setAttribute('data-has-more', 'false');
-                    }
-                }
-            });
+        if (inMin) inMin.value = minVal;
+        if (inMax) inMax.value = maxVal;
+
+        const leftPct = Math.min(100, Math.max(0, (minVal / maxProductPriceLimit) * 100));
+        const rightPct = Math.min(100, Math.max(0, 100 - ((maxVal / maxProductPriceLimit) * 100)));
+
+        if (track) {
+            track.style.left = `${leftPct}%`;
+            track.style.right = `${rightPct}%`;
         }
 
-        // Initialize infinite scroll
-        function initInfiniteScroll() {
-            var container = document.getElementById('products-container');
-            if (!container) return;
-            
-            // Revert to window-based scroll for the entire page
-            var scrollableContainer = window;
-
-            // Get initial state
-            var hasMoreAttr = container.getAttribute('data-has-more');
-            var currentPageAttr = container.getAttribute('data-current-page');
-            
-            if (currentPageAttr) {
-                infiniteScrollState.currentPage = parseInt(currentPageAttr) || 1;
-            } else {
-                infiniteScrollState.currentPage = 1;
-            }
-            infiniteScrollState.isLoading = false;
-            infiniteScrollState.hasMore = hasMoreAttr === 'true';
-            
-            var loadMoreBtn = document.getElementById('products-load-more-btn');
-            if (loadMoreBtn) {
-                loadMoreBtn.style.display = infiniteScrollState.hasMore ? 'block' : 'none';
-            }
-            
-            // Cleanup existing listeners
-            if (window._productsThrottledHandler) {
-                window.removeEventListener('scroll', window._productsThrottledHandler);
-                window.removeEventListener('touchmove', window._productsThrottledHandler);
-            }
-            
-            // Create scroll handler
-            var checkScroll = function() {
-                if (infiniteScrollState.isLoading || !infiniteScrollState.hasMore) return;
-                
-                var scrollTop = window.pageYOffset || document.documentElement.scrollTop;
-                var windowHeight = window.innerHeight;
-                var documentHeight = document.documentElement.scrollHeight;
-                
-                var distanceFromBottom = documentHeight - (scrollTop + windowHeight);
-                if (distanceFromBottom < 1000) { // High threshold for smoother infinite scroll
-                    loadMoreProducts();
-                }
-            };
-            
-            // Throttling
-            var isRunning = false;
-            window._productsThrottledHandler = function() {
-                if (isRunning) return;
-                isRunning = true;
-                requestAnimationFrame(function() {
-                    checkScroll();
-                    isRunning = false;
-                });
-            };
-            
-            window.addEventListener('scroll', window._productsThrottledHandler, { passive: true });
-            window.addEventListener('touchmove', window._productsThrottledHandler, { passive: true });
-            
-            // Check once immediately
-            checkScroll();
+        if (display) {
+            display.textContent = `৳${minVal.toLocaleString()} - ৳${maxVal.toLocaleString()}`;
         }
+    }
 
-        function applyFilters() {
-            var params = getFilterFormData(1);
-            var filterRoot = getActiveFilterRoot();
-            if (!filterRoot) return;
-            
-            // Reset infinite scroll state
-            infiniteScrollState.currentPage = 1;
-            infiniteScrollState.isLoading = false;
-            infiniteScrollState.hasMore = true;
-            
-            // Show loading state
-            var container = document.getElementById('products-container');
-            if (container) {
-                container.innerHTML = '<div class="col-12 text-center py-5"><i class="fas fa-spinner fa-spin fa-2x text-primary"></i><p class="mt-2">Loading products...</p></div>';
-            }
-            
-            // Make AJAX request
-            fetch('{{ route("products.filter") }}', {
-                method: 'POST',
-                headers: {
-                    'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content'),
-                    'X-Requested-With': 'XMLHttpRequest',
-                    'Accept': 'application/json',
-                    'Content-Type': 'application/x-www-form-urlencoded; charset=UTF-8'
-                },
-                credentials: 'same-origin',
-                body: params.toString()
-            })
-            .then(response => {
-                // Check if response is ok (status 200-299)
-                if (!response.ok) {
-                    return response.json().then(err => {
-                        throw new Error(err.message || 'An error occurred while filtering products');
-                    }).catch(() => {
-                        throw new Error('Server error. Please try again.');
-                    });
-                }
-                return response.json();
-            })
-            .then(data => {
-                if (data.success) {
-                    if (container) {
-                        container.innerHTML = data.html;
-                        // Update container data attributes for infinite scroll
-                        container.setAttribute('data-has-more', data.hasMore ? 'true' : 'false');
-                        container.setAttribute('data-current-page', data.currentPage || 1);
-                        
-                        
-                        // Update infinite scroll state
-                        infiniteScrollState.currentPage = data.currentPage || 1;
-                        infiniteScrollState.hasMore = data.hasMore || false;
-                        // Re-initialize infinite scroll after content update (use requestAnimationFrame for better performance)
-                        requestAnimationFrame(function() {
-                            initInfiniteScroll();
-                        });
-                    }
-                    
-                } else {
-                    if (container) {
-                        container.innerHTML = '<div class="col-12"><div class="no-products-container"><div class="no-products-icon"><i class="fas fa-search"></i></div><h3 class="no-products-title">No Products Found</h3><p class="no-products-message">We couldn\'t find any products matching your current filters.</p><div class="no-products-suggestion"><i class="fas fa-lightbulb"></i><span>Try adjusting your filters to see more products</span></div></div></div>';
-                        container.setAttribute('data-has-more', 'false');
-                        container.setAttribute('data-current-page', '1');
-                        infiniteScrollState.hasMore = false;
-                        infiniteScrollState.currentPage = 1;
-                    }
-                }
-            })
-            .catch(error => {
-                console.error('Filter error:', error);
-                if (container) {
-                    container.innerHTML = '<div class="col-12"><div class="no-products-container"><div class="no-products-icon"><i class="fas fa-exclamation-triangle"></i></div><h3 class="no-products-title">Error Loading Products</h3><p class="no-products-message">' + (error.message || 'An error occurred while filtering products. Please try again.') + '</p><div class="no-products-suggestion"><i class="fas fa-lightbulb"></i><span>Please refresh the page or try adjusting your filters</span></div></div></div>';
-                    infiniteScrollState.hasMore = false;
-                }
-            });
-        }
+    function syncMobileInputsToSlider() {
+        const inMin = document.getElementById('mobilePriceMin');
+        const inMax = document.getElementById('mobilePriceMax');
+        const rMin = document.getElementById('mobileRangeMin');
+        const rMax = document.getElementById('mobileRangeMax');
 
-        // Enhanced filter functionality
-        window.initProductsPage = function() {
-            try {
-                function initFilterRoot(filterRoot){
-                    if (!filterRoot) return;
-                    // Initialize price slider - check for both desktop and mobile IDs
-                    var priceSlider = filterRoot.querySelector('#price-slider') || filterRoot.querySelector('#price-slider-mobile');
-                    if (priceSlider && !priceSlider.noUiSlider && window.noUiSlider) {
-                        var minValue = filterRoot.querySelector('#priceMinValue') || filterRoot.querySelector('#priceMinValueMobile');
-                        var maxValue = filterRoot.querySelector('#priceMaxValue') || filterRoot.querySelector('#priceMaxValueMobile');
-                        var priceMinInput = filterRoot.querySelector('#price_min') || filterRoot.querySelector('#price_min_mobile');
-                        var priceMaxInput = filterRoot.querySelector('#price_max') || filterRoot.querySelector('#price_max_mobile');
-                        var priceMinDirectInput = filterRoot.querySelector('#priceMinInput') || filterRoot.querySelector('#priceMinInputMobile');
-                        var priceMaxDirectInput = filterRoot.querySelector('#priceMaxInput') || filterRoot.querySelector('#priceMaxInputMobile');
-                    var maxProductPrice = {{ $maxProductPrice }};
-                    
-                    window.noUiSlider.create(priceSlider, {
-                        start: [parseInt(priceMinInput.value), parseInt(priceMaxInput.value)],
-                        connect: true,
-                        step: 1,
-                        range: { 'min': 0, 'max': maxProductPrice },
-                        format: { 
-                            to: function(v){ return Math.round(v); }, 
-                            from: function(v){ return Number(v); } 
-                        }
-                    });
-                    
-                    priceSlider.noUiSlider.on('update', function (values) {
-                        var minVal = Math.round(values[0]);
-                        var maxVal = Math.round(values[1]);
-                        
-                        if (minValue) minValue.textContent = `${minVal.toLocaleString()}৳`;
-                        if (maxValue) maxValue.textContent = `${maxVal.toLocaleString()}৳`;
-                        if (priceMinInput) priceMinInput.value = minVal;
-                        if (priceMaxInput) priceMaxInput.value = maxVal;
-                        if (priceMinDirectInput) priceMinDirectInput.value = minVal;
-                        if (priceMaxDirectInput) priceMaxDirectInput.value = maxVal;
-                    });
-                    
-                    priceSlider.noUiSlider.on('change', function () {
-                        // Auto-apply filters on slider change (reduced delay for better performance)
-                        setTimeout(function() {
-                            applyFilters();
-                        }, 200);
-                    });
-                    }
+        if (!inMin || !inMax || !rMin || !rMax) return;
 
-                // Price input synchronization
-                var priceMinDirectInput = filterRoot.querySelector('#priceMinInput') || filterRoot.querySelector('#priceMinInputMobile');
-                var priceMaxDirectInput = filterRoot.querySelector('#priceMaxInput') || filterRoot.querySelector('#priceMaxInputMobile');
-                
-                if (priceMinDirectInput) {
-                    priceMinDirectInput.addEventListener('change', function() {
-                        var value = Math.max(0, Math.min(parseInt(this.value) || 0, {{ $maxProductPrice }}));
-                        this.value = value;
-                        var slider = filterRoot.querySelector('#price-slider') || filterRoot.querySelector('#price-slider-mobile');
-                        if (slider && slider.noUiSlider) {
-                            var currentValues = slider.noUiSlider.get();
-                            slider.noUiSlider.set([value, currentValues[1]]);
-                        }
-                    });
-                }
-                
-                if (priceMaxDirectInput) {
-                    priceMaxDirectInput.addEventListener('change', function() {
-                        var value = Math.max(0, Math.min(parseInt(this.value) || 0, {{ $maxProductPrice }}));
-                        this.value = value;
-                        var slider = filterRoot.querySelector('#price-slider') || filterRoot.querySelector('#price-slider-mobile');
-                        if (slider && slider.noUiSlider) {
-                            var currentValues = slider.noUiSlider.get();
-                            slider.noUiSlider.set([currentValues[0], value]);
-                        }
-                    });
-                }
+        let minVal = parseInt(inMin.value) || 0;
+        let maxVal = parseInt(inMax.value) || maxProductPriceLimit;
 
-                // Enhanced category checkboxes with "All" logic
-                var categoryCheckboxes = filterRoot.querySelectorAll('input[type=checkbox][name="categories[]"]');
-                var allCategoryCheckbox = filterRoot.querySelector('#catAll, #catAllMobile');
-                
-                categoryCheckboxes.forEach(function (checkbox) {
-                    checkbox.addEventListener('change', function () {
-                        if (this === allCategoryCheckbox && this.checked) {
-                            // Uncheck all other category checkboxes
-                            categoryCheckboxes.forEach(function(cb) {
-                                if (cb !== allCategoryCheckbox) {
-                                    cb.checked = false;
-                                }
-                            });
-                        } else if (this !== allCategoryCheckbox && this.checked) {
-                            // Uncheck "All" if a specific category is selected
-                            if (allCategoryCheckbox) {
-                                allCategoryCheckbox.checked = false;
-                            }
-                        }
-                        
-                        // Check if no categories are selected, then check "All"
-                        var hasSelectedCategory = Array.from(categoryCheckboxes).some(function(cb) {
-                            return cb !== allCategoryCheckbox && cb.checked;
-                        });
-                        
-                        if (!hasSelectedCategory && allCategoryCheckbox) {
-                            allCategoryCheckbox.checked = true;
-                        }
-                        
-                        // Auto-apply filters on category change (reduced delay for better performance)
-                        setTimeout(function() {
-                            applyFilters();
-                        }, 150);
-                    });
-                });
+        if (minVal < 0) minVal = 0;
+        if (maxVal > maxProductPriceLimit) maxVal = maxProductPriceLimit;
 
-                // Rating checkboxes
-                var ratingCheckboxes = filterRoot.querySelectorAll('input[type=checkbox][name="rating[]"]');
-                ratingCheckboxes.forEach(function (checkbox) {
-                    checkbox.addEventListener('change', function () {
-                        // Auto-apply filters on rating change (reduced delay for better performance)
-                        setTimeout(function() {
-                            applyFilters();
-                        }, 150);
-                    });
-                });
+        rMin.value = minVal;
+        rMax.value = maxVal;
+        updateMobilePriceSlider();
+    }
 
-                // Clear filters functionality
-                var clearFiltersBtns = filterRoot.querySelectorAll('#clearFilters, .btn-clear-filters');
-                clearFiltersBtns.forEach(function(clearFiltersBtn){
-                    clearFiltersBtn.addEventListener('click', function() {
-                        // Uncheck all checkboxes
-                        filterRoot.querySelectorAll('input[type=checkbox]').forEach(function(cb) {
-                            cb.checked = false;
-                        });
-                        
-                        // Check "All" category
-                        if (allCategoryCheckbox) {
-                            allCategoryCheckbox.checked = true;
-                        }
-                        
-                        // Reset price range
-                        var maxProductPrice = {{ $maxProductPrice }};
-                        var slider = filterRoot.querySelector('#price-slider') || filterRoot.querySelector('#price-slider-mobile');
-                        if (slider && slider.noUiSlider) {
-                            slider.noUiSlider.set([0, maxProductPrice]);
-                        }
-                        
-                        // Apply filters with cleared values
-                        applyFilters();
-                    });
-                });
+    // Open & Close Mobile Filter Drawer
+    window.openMobileFilters = function() {
+        const overlay = document.getElementById('mobileFilterDrawer');
+        const panel = document.getElementById('mobileFilterPanel');
+        if (!overlay || !panel) return;
+        overlay.classList.remove('opacity-0', 'pointer-events-none');
+        overlay.classList.add('opacity-100', 'pointer-events-auto');
+        panel.classList.remove('-translate-x-full');
+        panel.classList.add('translate-x-0');
+        document.body.style.overflow = 'hidden';
+    };
 
-                // Sort select
-                var sortSelect = document.getElementById('sortSelect');
-                if (sortSelect) {
-                    sortSelect.addEventListener('change', function () {
-                        applyFilters();
-                    });
-                    
-                    // Also sync mobile sort select
-                    var sortSelectMobile = document.getElementById('sortSelectMobile');
-                    if (sortSelectMobile) {
-                        sortSelectMobile.addEventListener('change', function () {
-                            // Sync with desktop select
-                            if (sortSelect) {
-                                sortSelect.value = this.value;
-                            }
-                            applyFilters();
-                        });
-                        
-                        // Sync desktop to mobile
-                        if (sortSelect) {
-                            sortSelect.addEventListener('change', function () {
-                                sortSelectMobile.value = this.value;
-                            });
-                        }
-                    }
-                }
+    window.closeMobileFilters = function(e) {
+        if (e && e.target && e.target.id !== 'mobileFilterDrawer') return;
+        const overlay = document.getElementById('mobileFilterDrawer');
+        const panel = document.getElementById('mobileFilterPanel');
+        if (!overlay || !panel) return;
+        panel.classList.remove('translate-x-0');
+        panel.classList.add('-translate-x-full');
+        overlay.classList.remove('opacity-100', 'pointer-events-auto');
+        overlay.classList.add('opacity-0', 'pointer-events-none');
+        document.body.style.overflow = '';
+    };
 
-                // Collapsible filter sections
-                var filterHeaders = filterRoot.querySelectorAll('.filter-section-header');
-                filterHeaders.forEach(function(header) {
-                    header.addEventListener('click', function() {
-                        var chevron = this.querySelector('.filter-chevron');
-                        if (chevron) {
-                            // Use CSS classes instead of direct transform override
-                            if (this.getAttribute('aria-expanded') === 'true') {
-                                chevron.classList.remove('rotated');
-                            } else {
-                                chevron.classList.add('rotated');
-                            }
-                        }
-                    });
-                });
-                
-                // Category toggle functionality - make entire expand area clickable
-                function toggleCategory(expandArea) {
-                    var targetId = expandArea.getAttribute('data-target');
-                    var targetElement = filterRoot.querySelector('#' + targetId);
-                    var toggleBtn = expandArea.querySelector('.category-toggle-btn');
-                    var icon = toggleBtn ? toggleBtn.querySelector('i') : null;
-                    
-                    if (targetElement) {
-                        var isExpanded = !targetElement.classList.contains('collapse');
-                        if (isExpanded) {
-                            // Collapse
-                            targetElement.style.maxHeight = targetElement.scrollHeight + 'px';
-                            // Force reflow
-                            targetElement.offsetHeight;
-                            targetElement.classList.add('collapse');
-                            targetElement.style.maxHeight = '0';
-                            if (icon) {
-                                icon.classList.remove('fa-chevron-down');
-                                icon.classList.add('fa-chevron-right');
-                            }
-                            expandArea.classList.remove('expanded');
-                        } else {
-                            // Expand
-                            targetElement.classList.remove('collapse');
-                            // Set initial height to 0, then animate to full height
-                            targetElement.style.maxHeight = '0';
-                            // Force reflow
-                            targetElement.offsetHeight;
-                            // Set to full height for animation
-                            targetElement.style.maxHeight = targetElement.scrollHeight + 'px';
-                            if (icon) {
-                                icon.classList.remove('fa-chevron-right');
-                                icon.classList.add('fa-chevron-down');
-                            }
-                            expandArea.classList.add('expanded');
-                            
-                            // After animation completes, set to auto for dynamic content
-                            setTimeout(function() {
-                                if (!targetElement.classList.contains('collapse')) {
-                                    targetElement.style.maxHeight = 'none';
-                                }
-                            }, 300);
-                        }
-                    }
-                }
-                
-                var categoryExpandAreas = filterRoot.querySelectorAll('.category-expand-area');
-                categoryExpandAreas.forEach(function(expandArea) {
-                    // Remove existing listeners by cloning
-                    var newExpandArea = expandArea.cloneNode(true);
-                    expandArea.parentNode.replaceChild(newExpandArea, expandArea);
-                    
-                    // Show toggle button immediately to prevent flash
-                    var toggleBtn = newExpandArea.querySelector('.category-toggle-btn');
-                    if (toggleBtn) {
-                        toggleBtn.classList.add('initialized');
-                    }
-                    
-                    // Click handler for expand area
-                    newExpandArea.addEventListener('click', function(e) {
-                        e.preventDefault();
-                        e.stopPropagation();
-                        toggleCategory(this);
-                    });
-                    
-                    // Keyboard support
-                    newExpandArea.addEventListener('keydown', function(e) {
-                        if (e.key === 'Enter' || e.key === ' ') {
-                            e.preventDefault();
-                            e.stopPropagation();
-                            toggleCategory(this);
-                        }
-                    });
-                });
-                
-                // Auto-expand parent categories if any of their children are selected
-                var childCheckboxes = filterRoot.querySelectorAll('.category-child input[type=checkbox]');
-                var hasExpandedAny = false;
-                childCheckboxes.forEach(function(checkbox) {
-                    if (checkbox.checked) {
-                        var parentWrapper = checkbox.closest('.category-parent-wrapper');
-                        if (parentWrapper) {
-                            var childrenDiv = parentWrapper.querySelector('.category-children');
-                            var expandArea = parentWrapper.querySelector('.category-expand-area');
-                            if (childrenDiv && expandArea) {
-                                childrenDiv.classList.remove('collapse');
-                                // Set max-height immediately without setTimeout to prevent flash
-                                requestAnimationFrame(function() {
-                                    childrenDiv.style.maxHeight = childrenDiv.scrollHeight + 'px';
-                                });
-                                var toggleBtn = expandArea.querySelector('.category-toggle-btn');
-                                var icon = toggleBtn ? toggleBtn.querySelector('i') : null;
-                                if (icon) {
-                                    icon.classList.remove('fa-chevron-right');
-                                    icon.classList.add('fa-chevron-down');
-                                }
-                                expandArea.classList.add('expanded');
-                                hasExpandedAny = true;
-                            }
-                        }
-                    }
-                });
-                
-                // Initialize max-height for all non-collapsed children (for smooth animations)
-                // Use requestAnimationFrame instead of setTimeout for better performance
-                requestAnimationFrame(function() {
-                    var allChildrenDivs = filterRoot.querySelectorAll('.category-children:not(.collapse)');
-                    allChildrenDivs.forEach(function(childrenDiv) {
-                        if (!childrenDiv.style.maxHeight || childrenDiv.style.maxHeight === '0px') {
-                            childrenDiv.style.maxHeight = childrenDiv.scrollHeight + 'px';
-                        }
-                    });
-                    // Show all category toggle buttons after initialization to prevent flash
-                    var allToggleBtns = filterRoot.querySelectorAll('.category-toggle-btn');
-                    allToggleBtns.forEach(function(btn) {
-                        btn.classList.add('initialized');
-                    });
-                });
-                
-                // Highlight parent categories that have selected children
-                function updateParentCategoryHighlight() {
-                    var parentWrappers = filterRoot.querySelectorAll('.category-parent-wrapper');
-                    parentWrappers.forEach(function(wrapper) {
-                        var childCheckboxes = wrapper.querySelectorAll('.category-child input[type=checkbox]');
-                        var hasSelectedChild = Array.from(childCheckboxes).some(function(cb) { return cb.checked; });
-                        var parentOption = wrapper.querySelector('.category-parent');
-                        if (hasSelectedChild) {
-                            parentOption.classList.add('has-selected-child');
-                        } else {
-                            parentOption.classList.remove('has-selected-child');
-                        }
-                    });
-                }
-                
-                // Update highlight on checkbox changes
-                var allCategoryCheckboxes = filterRoot.querySelectorAll('.category-parent-wrapper input[type=checkbox]');
-                allCategoryCheckboxes.forEach(function(checkbox) {
-                    checkbox.addEventListener('change', function() {
-                        setTimeout(updateParentCategoryHighlight, 100);
-                    });
-                });
-                
-                // Initial highlight update
-                updateParentCategoryHighlight();
-                }
-                // Initialize both desktop and mobile filter containers (if present)
-                initFilterRoot(document.getElementById('filterFormDesktop'));
-                initFilterRoot(document.getElementById('filterForm'));
-                
-                
-                // Initialize infinite scroll instead of pagination
-                initInfiniteScroll();
-                
-                // Also check if page is already scrolled near bottom (for short pages)
-                // Use requestAnimationFrame for better performance
-                requestAnimationFrame(function() {
-                    requestAnimationFrame(function() {
-                        var scrollTop = window.pageYOffset || document.documentElement.scrollTop || document.body.scrollTop;
-                        var windowHeight = window.innerHeight || document.documentElement.clientHeight;
-                        var documentHeight = Math.max(
-                            document.body.scrollHeight,
-                            document.body.offsetHeight,
-                            document.documentElement.clientHeight,
-                            document.documentElement.scrollHeight,
-                            document.documentElement.offsetHeight
-                        );
-                        var distanceFromBottom = documentHeight - (scrollTop + windowHeight);
-                        
-                        // If page is short and we're near bottom, try loading more
-                        if (distanceFromBottom < 500 && infiniteScrollState.hasMore && !infiniteScrollState.isLoading) {
-                            console.log('Products page is short, checking if we need to load more products');
-                            loadMoreProducts();
-                        }
-                    });
-                });
-                
-                // Also trigger a check after a short delay to catch any initial scroll position
-                // Reduced delay for better performance
-                setTimeout(function() {
-                    if (window.productsScrollHandler) {
-                        window.productsScrollHandler();
-                    }
-                }, 500);
-                
-                // Minimal: no extra sync logic necessary
-            } catch(error) {
-                console.error('Error initializing products page:', error);
-            }
-        };
+    document.getElementById('mobileFilterDrawer')?.addEventListener('click', window.closeMobileFilters);
 
-        // Initialize on first load and after AJAX injections
-        document.addEventListener('DOMContentLoaded', function(){ if (typeof window.initProductsPage === 'function') window.initProductsPage(); });
-        window.addEventListener('pageshow', function(){ if (typeof window.initProductsPage === 'function') window.initProductsPage(); });
+    function applyMobileFiltersAndClose() {
+        const minVal = document.getElementById('mobilePriceMin').value;
+        const maxVal = document.getElementById('mobilePriceMax').value;
+        document.getElementById('filterPriceMin').value = minVal;
+        document.getElementById('filterPriceMax').value = maxVal;
+        syncInputsToSlider();
 
-        // Remove any existing cart event listeners to prevent duplicates
-        if (window.__productsCartEventListener) {
-            document.removeEventListener('click', window.__productsCartEventListener);
-        }
+        const mobileInStock = document.getElementById('mobileFilterInStock')?.checked || false;
+        const desktopInStock = document.getElementById('filterInStock');
+        if (desktopInStock) desktopInStock.checked = mobileInStock;
 
-        // Cart functionality is now handled by global cart handler in master.blade.php
-        // No need for duplicate event listeners here
-        document.addEventListener('click', function(e){
-            var btn = e.target && e.target.closest('.wishlist-btn');
-            if (!btn) return;
-            e.preventDefault();
-            var productId = btn.getAttribute('data-product-id');
-            if (!window.jQuery) return;
-            window.jQuery.ajax({
-                url: '/add-remove-wishlist/' + productId,
-                type: 'POST',
-                headers: { 'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content') },
-                success: function (response) {
-                    if (response.success) {
-                        btn.classList.toggle('active');
-                        showToast(response.message, 'success');
-                    }
-                }
-            });
+        const mobileCats = Array.from(document.querySelectorAll('.mobile-cat-checkbox:checked')).map(cb => cb.value);
+        document.querySelectorAll('.cat-filter-checkbox').forEach(cb => {
+            cb.checked = mobileCats.includes(cb.value);
         });
-    </script>
-    <style>
-        .custom-toast {
-            min-width: 220px;
-            max-width: 340px;
-            background: #fff;
-            color: #222;
-            padding: 0;
-            border-radius: 10px;
-            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.18);
-            font-size: 16px;
-            opacity: 1;
-            transition: opacity 0.4s, transform 0.4s;
-            margin-left: auto;
-            margin-right: 0;
-            pointer-events: auto;
-            z-index: 16000;
-            overflow: hidden;
-            border-left: 5px solid #2196F3;
-            position: relative;
+
+        const mobileBrands = Array.from(document.querySelectorAll('.mobile-brand-checkbox:checked')).map(cb => cb.value);
+        document.querySelectorAll('.brand-filter-checkbox').forEach(cb => {
+            cb.checked = mobileBrands.includes(cb.value);
+        });
+
+        closeMobileFilters();
+        applyShopFilters();
+    }
+
+    // Clear All Filters
+    window.clearAllShopFilters = function() {
+        document.querySelectorAll('.cat-filter-checkbox, .mobile-cat-checkbox, .brand-filter-checkbox, .mobile-brand-checkbox').forEach(cb => cb.checked = false);
+        const inStock = document.getElementById('filterInStock');
+        if (inStock) inStock.checked = false;
+        const mobileInStock = document.getElementById('mobileFilterInStock');
+        if (mobileInStock) mobileInStock.checked = false;
+
+        const inMin = document.getElementById('filterPriceMin');
+        const inMax = document.getElementById('filterPriceMax');
+        if (inMin) inMin.value = 0;
+        if (inMax) inMax.value = maxProductPriceLimit;
+        syncInputsToSlider();
+
+        currentSort = 'newest';
+        const labelEl = document.getElementById('currentSortLabel');
+        if (labelEl) labelEl.textContent = 'Newest Arrivals';
+
+        applyShopFilters();
+    };
+
+    // Handle AJAX Pagination
+    window.handleShopPagination = async function(e, targetUrl) {
+        if (e) e.preventDefault();
+        if (!targetUrl) return;
+
+        let targetPage = 1;
+        try {
+            const urlObj = new URL(targetUrl, window.location.origin);
+            targetPage = urlObj.searchParams.get('page') || 1;
+        } catch (err) {
+            const match = targetUrl.match(/page=(\d+)/);
+            if (match) targetPage = match[1];
         }
 
-        .custom-toast.error {
-            border-left-color: #e53935;
-        }
+        const selectedCats = Array.from(document.querySelectorAll('.cat-filter-checkbox:checked')).map(cb => cb.value);
+        const selectedBrands = Array.from(document.querySelectorAll('.brand-filter-checkbox:checked')).map(cb => cb.value);
+        const inStock = document.getElementById('filterInStock')?.checked ? '1' : '';
+        const priceMin = document.getElementById('filterPriceMin')?.value || '';
+        const priceMax = document.getElementById('filterPriceMax')?.value || '';
 
-        .custom-toast .toast-content {
-            display: flex;
-            align-items: center;
-            gap: 12px;
-            padding: 16px 18px 14px 16px;
-        }
+        const params = new URLSearchParams();
+        selectedCats.forEach(c => params.append('categories[]', c));
+        selectedBrands.forEach(b => params.append('brands[]', b));
+        if (inStock) params.set('in_stock', '1');
+        if (priceMin && priceMin > 0) params.set('price_min', priceMin);
+        if (priceMax && priceMax < maxProductPriceLimit) params.set('price_max', priceMax);
+        if (currentSort) params.set('sort', currentSort);
+        params.set('page', targetPage);
 
-        .custom-toast .toast-icon {
-            font-size: 22px;
-            flex-shrink: 0;
-        }
+        const newUrl = `/products?${params.toString()}`;
+        window.history.pushState({}, '', newUrl);
 
-        .custom-toast .toast-message {
-            flex: 1;
-            font-weight: 500;
-        }
+        const loading = document.getElementById('shopLoadingOverlay');
+        if (loading) loading.classList.remove('hidden');
 
-        .custom-toast .toast-close {
-            background: none;
-            border: none;
-            color: #888;
-            font-size: 22px;
-            cursor: pointer;
-            margin-left: 8px;
-            transition: color 0.2s;
-        }
+        try {
+            const res = await fetch(newUrl, {
+                headers: {
+                    'X-Requested-With': 'XMLHttpRequest',
+                    'Accept': 'application/json'
+                }
+            });
 
-        .custom-toast .toast-close:hover {
-            color: #e53935;
-        }
+            const data = await res.json();
+            if (data && data.html) {
+                const container = document.getElementById('shopProductsContainer');
+                if (container) {
+                    container.innerHTML = `<div id="shopLoadingOverlay" class="absolute inset-0 bg-white/70 backdrop-blur-[1px] z-20 hidden flex items-center justify-center"><div class="w-10 h-10 border-3 border-stone-200 border-t-[#a28e46] rounded-full animate-spin"></div></div>` + data.html;
+                }
 
-        .custom-toast .toast-progress {
-            position: absolute;
-            left: 0;
-            bottom: 0;
-            height: 3px;
-            width: 100%;
-            background: linear-gradient(90deg, #2196F3, #21cbf3);
-            transition: width 2.3s linear;
-        }
+                const dispCount = document.getElementById('displayedProductsCount');
+                const totCount = document.getElementById('totalProductsCount');
+                if (dispCount && data.count !== undefined) dispCount.textContent = data.count;
+                if (totCount && data.total !== undefined) totCount.textContent = data.total;
 
-        .custom-toast.error .toast-progress {
-            background: linear-gradient(90deg, #e53935, #ffb199);
-        }
-
-        .custom-toast.hide {
-            opacity: 0;
-            transform: translateY(-20px) scale(0.98);
-        }
-
-        /* Load more button - Green theme, transparent, with loading vibe */
-        .load-more-btn {
-            display: inline-flex;
-            align-items: center;
-            gap: 10px;
-            padding: 10px 24px;
-            border-radius: 25px;
-            border: 2px solid rgba(34, 197, 94, 0.3);
-            color: #22c55e;
-            font-weight: 500;
-            font-size: 14px;
-            background: rgba(34, 197, 94, 0.08);
-            backdrop-filter: blur(10px);
-            transition: all 0.3s ease;
-            position: relative;
-            overflow: hidden;
-        }
-
-        .load-more-btn::before {
-            content: '';
-            position: absolute;
-            top: 0;
-            left: -100%;
-            width: 100%;
-            height: 100%;
-            background: linear-gradient(90deg, transparent, rgba(34, 197, 94, 0.2), transparent);
-            transition: left 0.5s ease;
-        }
-
-        .load-more-btn:hover {
-            background: rgba(34, 197, 94, 0.15);
-            border-color: rgba(34, 197, 94, 0.5);
-            transform: translateY(-2px);
-            box-shadow: 0 4px 12px rgba(34, 197, 94, 0.2);
-        }
-
-        .load-more-btn:hover::before {
-            left: 100%;
-        }
-
-        .load-more-btn:active {
-            transform: translateY(0);
-        }
-
-        .load-more-btn.loading {
-            pointer-events: none;
-        }
-
-        .load-more-btn.loading .load-more-icon {
-            animation: spin 1s linear infinite;
-        }
-
-        .load-more-btn.loading .load-more-text::after {
-            content: '...';
-            animation: dots 1.5s steps(4, end) infinite;
-        }
-
-        @keyframes spin {
-            from { transform: rotate(0deg); }
-            to { transform: rotate(360deg); }
-        }
-
-        @keyframes dots {
-            0%, 20% { content: '.'; }
-            40% { content: '..'; }
-            60%, 100% { content: '...'; }
-        }
-
-        .load-more-btn .load-more-icon {
-            display: inline-flex;
-            align-items: center;
-            justify-content: center;
-            font-size: 14px;
-            transition: transform 0.3s ease;
-        }
-
-        .load-more-btn .load-more-text {
-            position: relative;
-        }
-
-        .load-more-btn:disabled {
-            opacity: 0.5;
-            cursor: not-allowed;
-        }
-
-        /* Filter chevron rotation */
-        .filter-chevron {
-            transition: transform 0.3s ease;
-        }
-        .filter-chevron.rotated {
-            transform: rotate(180deg);
-        }
-
-        /* Sticky filter/sort bar for mobile */
-        .sticky-filter-bar {
-            position: sticky;
-            top: 100px; /* keep below fixed header (80px on mobile) */
-            z-index: 1000;
-            background: #fff;
-            padding: 12px 0;
-            margin-bottom: 16px;
-            border-bottom: 1px solid #e5e7eb;
-            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
-            backdrop-filter: blur(10px);
-            left: 0;
-            right: 0;
-        }
-
-        @media (max-width: 767.98px) {
-            .sticky-filter-bar {
-                margin-left: -15px;
-                margin-right: -15px;
-                padding-left: 15px;
-                padding-right: 15px;
+                // Smooth scroll up to top of grid
+                const mainArea = document.getElementById('shopProductsContainer');
+                if (mainArea) {
+                    mainArea.scrollIntoView({ behavior: 'smooth', block: 'start' });
+                }
+            } else {
+                window.location.href = newUrl;
             }
+        } catch(err) {
+            console.error('Pagination error:', err);
+            window.location.href = newUrl;
+        } finally {
+            if (loading) loading.classList.add('hidden');
         }
+    };
 
-        /* No Products Found Styles */
-        .no-products-container {
-            text-align: center;
-            padding: 60px 20px;
-            background: linear-gradient(135deg, #F3F0FF 0%, #E3F2FD 100%);
-            border-radius: 16px;
-            margin: 20px 0;
-            border: 1px solid #E3F2FD;
-            box-shadow: 0 4px 20px rgba(139, 92, 246, 0.1);
-        }
+    // Apply Filters with Smooth AJAX Refresh
+    window.applyShopFilters = async function() {
+        const loading = document.getElementById('shopLoadingOverlay');
+        if (loading) loading.classList.remove('hidden');
 
-        .no-products-icon {
-            width: 80px;
-            height: 80px;
-            background: linear-gradient(135deg, #8B5CF6 0%, #00512C 100%);
-            border-radius: 50%;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            margin: 0 auto 24px;
-            box-shadow: 0 8px 25px rgba(139, 92, 246, 0.3);
-        }
+        const selectedCats = Array.from(document.querySelectorAll('.cat-filter-checkbox:checked')).map(cb => cb.value);
+        const selectedBrands = Array.from(document.querySelectorAll('.brand-filter-checkbox:checked')).map(cb => cb.value);
+        const inStock = document.getElementById('filterInStock')?.checked ? '1' : '';
+        const priceMin = document.getElementById('filterPriceMin')?.value || '';
+        const priceMax = document.getElementById('filterPriceMax')?.value || '';
 
-        .no-products-icon i {
-            font-size: 32px;
-            color: white;
-        }
+        const params = new URLSearchParams();
+        selectedCats.forEach(c => params.append('categories[]', c));
+        selectedBrands.forEach(b => params.append('brands[]', b));
+        if (inStock) params.set('in_stock', '1');
+        if (priceMin && priceMin > 0) params.set('price_min', priceMin);
+        if (priceMax && priceMax < maxProductPriceLimit) params.set('price_max', priceMax);
+        if (currentSort) params.set('sort', currentSort);
 
-        .no-products-title {
-            font-size: 28px;
-            font-weight: 700;
-            color: #00512C;
-            margin-bottom: 16px;
-            line-height: 1.2;
-        }
+        const newUrl = `${window.location.pathname}?${params.toString()}`;
+        window.history.pushState({}, '', newUrl);
 
-        .no-products-message {
-            font-size: 16px;
-            color: #6c757d;
-            margin-bottom: 24px;
-            line-height: 1.5;
-            max-width: 500px;
-            margin-left: auto;
-            margin-right: auto;
-        }
+        try {
+            const res = await fetch(newUrl, {
+                headers: {
+                    'X-Requested-With': 'XMLHttpRequest',
+                    'Accept': 'application/json'
+                }
+            });
 
-        .no-products-suggestion {
-            display: inline-flex;
-            align-items: center;
-            gap: 8px;
-            background: white;
-            padding: 12px 20px;
-            border-radius: 25px;
-            border: 1px solid #E3F2FD;
-            box-shadow: 0 2px 10px rgba(0, 81, 44, 0.1);
-            font-size: 14px;
-            color: #00512C;
-            font-weight: 500;
-        }
-
-        .no-products-suggestion i {
-            color: #FCD34D;
-            font-size: 16px;
-        }
-
-        /* Responsive Design */
-        @media (max-width: 768px) {
-            .no-products-container {
-                padding: 40px 15px;
-                margin: 15px 0;
+            const data = await res.json();
+            if (data && data.html) {
+                const container = document.getElementById('shopProductsContainer');
+                if (container) {
+                    container.innerHTML = `<div id="shopLoadingOverlay" class="absolute inset-0 bg-white/70 backdrop-blur-[1px] z-20 hidden flex items-center justify-center"><div class="w-10 h-10 border-3 border-stone-200 border-t-[#a28e46] rounded-full animate-spin"></div></div>` + data.html;
+                }
+                const dispCount = document.getElementById('displayedProductsCount');
+                const totCount = document.getElementById('totalProductsCount');
+                if (dispCount && data.count !== undefined) dispCount.textContent = data.count;
+                if (totCount && data.total !== undefined) totCount.textContent = data.total;
+            } else {
+                window.location.reload();
             }
+        } catch(e) {
+            console.error('Filter error:', e);
+            window.location.href = newUrl;
+        } finally {
+            if (loading) loading.classList.add('hidden');
+        }
+    };
 
-            .no-products-icon {
-                width: 60px;
-                height: 60px;
-                margin-bottom: 20px;
-            }
-
-            .no-products-icon i {
-                font-size: 24px;
-            }
-
-            .no-products-title {
-                font-size: 24px;
-                margin-bottom: 12px;
-            }
-
-            .no-products-message {
-                font-size: 14px;
-                margin-bottom: 20px;
-            }
-
-            .no-products-suggestion {
-                padding: 10px 16px;
-                font-size: 13px;
-            }
-        }
-        
-        /* Offcanvas width - leave space for backdrop */
-        #filtersOffcanvas.offcanvas-start {
-            width: 85%;
-            max-width: 320px;
-        }
-        
-        @media (max-width: 576px) {
-            #filtersOffcanvas.offcanvas-start {
-                width: 80%;
-                max-width: 300px;
-            }
-        }
-        
-        /* Category Hierarchy Styles */
-        .category-parent-wrapper {
-            margin-bottom: 6px;
-        }
-        
-        .category-parent {
-            position: relative;
-            display: flex;
-            align-items: center;
-            transition: background-color 0.2s ease;
-            border-radius: 6px;
-            padding: 2px 0;
-        }
-        
-        .category-parent:hover {
-            background-color: rgba(0, 81, 44, 0.03);
-        }
-        
-        .category-parent.has-selected-child {
-            background-color: rgba(0, 81, 44, 0.08);
-        }
-        
-        .category-parent.has-selected-child .label-text {
-            font-weight: 600;
-            color: #00512C;
-        }
-        
-        .category-expand-area {
-            display: flex;
-            align-items: center;
-            gap: 6px;
-            margin-left: auto;
-            cursor: pointer;
-            padding: 4px 8px;
-            border-radius: 4px;
-            transition: background-color 0.2s ease;
-            user-select: none;
-            -webkit-user-select: none;
-        }
-        
-        .category-expand-area:hover {
-            background-color: rgba(0, 81, 44, 0.1);
-        }
-        
-        .category-expand-area:focus {
-            outline: 2px solid #00512C;
-            outline-offset: 2px;
-        }
-        
-        .category-expand-area.expanded {
-            background-color: rgba(0, 81, 44, 0.08);
-        }
-        
-        .category-count-badge {
-            background: linear-gradient(135deg, #00512C 0%, #008751 100%);
-            color: white;
-            font-size: 11px;
-            font-weight: 600;
-            padding: 2px 6px;
-            border-radius: 10px;
-            min-width: 20px;
-            text-align: center;
-            line-height: 1.4;
-        }
-        
-        .category-toggle-btn {
-            background: none;
-            border: none;
-            padding: 0;
-            cursor: pointer;
-            color: #6c757d;
-            transition: color 0.2s, transform 0.2s, opacity 0.2s;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            width: 20px;
-            height: 20px;
-            flex-shrink: 0;
-            opacity: 0;
-            visibility: hidden;
-        }
-        
-        /* Show toggle button after initialization to prevent flash */
-        .category-toggle-btn.initialized {
-            opacity: 1;
-            visibility: visible;
-        }
-        
-        .category-toggle-btn:hover {
-            color: #00512C;
-        }
-        
-        .category-toggle-btn:focus {
-            outline: none;
-        }
-        
-        .category-toggle-btn i {
-            font-size: 11px;
-            transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-        }
-        
-        .category-toggle-btn i.fa-chevron-down {
-            transform: rotate(90deg);
-        }
-        
-        .category-children {
-            margin-left: 24px;
-            margin-top: 6px;
-            padding-left: 12px;
-            border-left: 2px solid #e0e7ef;
-            overflow: hidden;
-            max-height: 0;
-            transition: max-height 0.3s cubic-bezier(0.4, 0, 0.2, 1), margin-top 0.3s ease, padding-top 0.3s ease, padding-bottom 0.3s ease;
-            padding-top: 0;
-            padding-bottom: 0;
-        }
-        
-        .category-children.collapse {
-            max-height: 0 !important;
-            margin-top: 0;
-            padding-top: 0;
-            padding-bottom: 0;
-        }
-        
-        .category-children:not(.collapse) {
-            padding-top: 4px;
-            padding-bottom: 4px;
-        }
-        
-        .category-child {
-            margin-bottom: 4px;
-            padding-left: 4px;
-            transition: background-color 0.2s ease;
-            border-radius: 4px;
-        }
-        
-        .category-child:hover {
-            background-color: rgba(0, 81, 44, 0.04);
-        }
-        
-        .category-child .label-text {
-            font-size: 14px;
-            color: #495057;
-            font-weight: 400;
-        }
-        
-        .category-child input[type=checkbox]:checked + .filter-label .label-text {
-            color: #00512C;
-            font-weight: 500;
-        }
-        
-        /* Smooth animation for expanding/collapsing */
-        @media (prefers-reduced-motion: no-preference) {
-            .category-children {
-                transition: max-height 0.3s cubic-bezier(0.4, 0, 0.2, 1), 
-                           margin-top 0.3s ease, 
-                           padding-top 0.3s ease, 
-                           padding-bottom 0.3s ease,
-                           opacity 0.2s ease;
-            }
-        }
-        
-        @media (prefers-reduced-motion: reduce) {
-            .category-children {
-                transition: none;
-            }
-        }
-        
-    </style>
-@endpush
+    document.addEventListener('DOMContentLoaded', () => {
+        updatePriceSlider();
+    });
+</script>
+@endsection

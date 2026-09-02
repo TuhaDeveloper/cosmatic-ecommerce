@@ -21,7 +21,11 @@ class PageController extends Controller
             ->where('show_in_ecommerce', 1)
             ->whereNull('parent_id')
             ->with(['children' => function($q) {
-                $q->where('status', 'active')->where('show_in_ecommerce', 1);
+                $q->where('status', 'active')
+                  ->where('show_in_ecommerce', 1)
+                  ->with(['children' => function($q2) {
+                      $q2->where('status', 'active')->where('show_in_ecommerce', 1);
+                  }]);
             }])
             ->get();
     }
@@ -74,9 +78,10 @@ class PageController extends Controller
         $banners = Banner::active()->where('position', 'hero')->orderBy('id', 'desc')->get();
         $vlogs = Vlog::where('is_active', 1)->orderBy('id', 'desc')->take(6)->get();
         $vlogBottomBanners = Banner::active()->where('position', 'vlogs_bottom')->orderBy('id', 'desc')->get();
+        $featureDeals = Banner::active()->where('position', 'feature_deal')->orderBy('sort_order', 'asc')->orderBy('id', 'desc')->take(3)->get();
 
         $pageTitle = 'Home';
-        return view('ecommerce.home', compact('categories', 'featuredCategories', 'bestDeals', 'banners', 'vlogs', 'vlogBottomBanners', 'pageTitle'));
+        return view('ecommerce.home', compact('categories', 'featuredCategories', 'bestDeals', 'banners', 'vlogs', 'vlogBottomBanners', 'featureDeals', 'pageTitle'));
     }
 
     public function categories()
@@ -103,10 +108,14 @@ class PageController extends Controller
     {
         $categories = $this->getSidebarCategories();
         $products = Product::published()
+            ->with(['category', 'brand'])
             ->orderByRaw('CASE WHEN discount > 0 THEN 0 ELSE 1 END')
             ->orderBy('discount', 'desc')
             ->orderBy('id', 'desc')
-            ->paginate(20);
+            ->paginate(12)
+            ->withPath('/best-deal')
+            ->withQueryString();
+            
         $this->attachWishlistStatus($products);
 
         $maxProductPrice = $this->getMaxProductPrice();
@@ -116,11 +125,11 @@ class PageController extends Controller
         $selectedRatings = $request->get('rating', []);
         $selectedSort = $request->get('sort', '');
 
-        // Return JSON for AJAX / infinite scroll requests
+        // Return JSON for AJAX requests
         if ($request->ajax() || $request->get('infinite_scroll')) {
             $html = view('ecommerce.partials.best-deal-grid', [
                 'products'       => $products,
-                'hidePagination' => true,
+                'hidePagination' => false,
             ])->render();
 
             return response()->json([
@@ -165,13 +174,19 @@ class PageController extends Controller
     public function submitContact(Request $request)
     {
         $request->validate([
-            'name' => 'required|string|max:255',
-            'email' => 'required|email|max:255',
+            'name' => 'nullable|string|max:255',
+            'full_name' => 'nullable|string|max:255',
+            'email' => 'nullable|email|max:255',
+            'phone_number' => 'nullable|string|max:255',
             'subject' => 'nullable|string|max:255',
             'message' => 'required|string',
         ]);
         
-        return back()->with('success', 'Your message has been sent successfully!');
+        if ($request->ajax()) {
+            return response()->json(['success' => true, 'message' => 'Thank you! Your message has been received. Our concierge team will contact you shortly.']);
+        }
+        
+        return back()->with('success', 'Thank you! Your message has been received. Our concierge team will contact you shortly.');
     }
 
     public function privacy()
@@ -217,32 +232,80 @@ class PageController extends Controller
 
     public function categoryWiseProducts(Request $request)
     {
-        $categories = $this->getSidebarCategories();
-        $category = ProductServiceCategory::where('slug', $request->slug)->firstOrFail();
-        $allCategoryIds = ProductServiceCategory::getAllChildIdsForCategories([$category->id]);
-        
-        $products = Product::published()
-            ->whereIn('category_id', $allCategoryIds)
-            ->paginate(20);
-        $this->attachWishlistStatus($products);
-
-        $maxProductPrice = $this->getMaxProductPrice();
-        $priceMin = $request->get('price_min', 0);
-        $priceMax = $request->get('price_max', $maxProductPrice);
-        $selectedCategories = [$category->slug];
-        $selectedRatings = $request->get('rating', []);
-        $selectedSort = $request->get('sort', '');
-
-        $pageTitle = $category->name;
-        return view('ecommerce.products', compact('products', 'category', 'categories', 'pageTitle', 'priceMin', 'priceMax', 'maxProductPrice', 'selectedCategories', 'selectedRatings', 'selectedSort'));
+        $request->merge(['category' => $request->slug]);
+        return $this->products($request);
     }
 
     public function productDetails($slug)
     {
-        $product = Product::published()->with(['category', 'variations.stocks.warehouse', 'galleries', 'brand'])->where('slug', $slug)->firstOrFail();
+        $product = Product::published()
+            ->with([
+                'category',
+                'brand',
+                'galleries',
+                'variations.stocks.warehouse',
+                'variations.combinations.attribute',
+                'variations.combinations.attributeValue',
+                'approvedReviews.user'
+            ])
+            ->where('slug', $slug)
+            ->firstOrFail();
         
         $userId = Auth::id();
         $product->is_wishlisted = $userId ? Wishlist::where('user_id', $userId)->where('product_id', $product->id)->exists() : false;
+
+        // Extract and organize variation attribute groups for lightning-fast UI rendering
+        $attributeGroups = [];
+        $variationsJson = [];
+
+        if ($product->has_variations) {
+            foreach ($product->variations as $variation) {
+                if ($variation->status !== 'active') continue;
+
+                $comboMap = [];
+                foreach ($variation->combinations as $combination) {
+                    $attr = $combination->attribute;
+                    $val = $combination->attributeValue;
+                    if (!$attr || !$val) continue;
+
+                    $comboMap[$attr->id] = $val->id;
+
+                    if (!isset($attributeGroups[$attr->id])) {
+                        $attributeGroups[$attr->id] = [
+                            'id' => $attr->id,
+                            'name' => $attr->name,
+                            'values' => []
+                        ];
+                    }
+                    if (!isset($attributeGroups[$attr->id]['values'][$val->id])) {
+                        $attributeGroups[$attr->id]['values'][$val->id] = [
+                            'id' => $val->id,
+                            'label' => $val->value,
+                            'color_code' => $val->color_code,
+                            'image' => $val->image ? asset($val->image) : null,
+                        ];
+                    }
+                }
+
+                $vPrice = (float)$variation->price;
+                $vDiscount = $variation->discount > 0 ? (float)$variation->discount : 0;
+                $vEffective = $vDiscount > 0 && $vDiscount < $vPrice ? $vDiscount : $vPrice;
+                $stock = $variation->stocks->sum('quantity');
+
+                $variationsJson[] = [
+                    'id' => $variation->id,
+                    'name' => $variation->name,
+                    'sku' => $variation->sku,
+                    'price' => $vPrice,
+                    'discount' => $vDiscount,
+                    'effective_price' => $vEffective,
+                    'in_stock' => $stock > 0,
+                    'stock' => $stock,
+                    'image' => $variation->image ? asset($variation->image) : null,
+                    'attribute_combinations' => $comboMap,
+                ];
+            }
+        }
 
         $relatedProducts = Product::published()
             ->where('category_id', $product->category_id)
@@ -252,7 +315,7 @@ class PageController extends Controller
         $this->attachWishlistStatus($relatedProducts);
 
         $pageTitle = $product->name;
-        return view('ecommerce.productDetails', compact('product', 'relatedProducts', 'pageTitle'));
+        return view('ecommerce.productDetails', compact('product', 'relatedProducts', 'pageTitle', 'attributeGroups', 'variationsJson'));
     }
 
     public function comboDetails($slug)
@@ -285,15 +348,21 @@ class PageController extends Controller
     public function products(Request $request)
     {
         $categories = $this->getSidebarCategories();
-        $query = Product::published();
+        $brands = \App\Models\Brand::withCount(['products' => function($q) {
+            $q->published();
+        }])->having('products_count', '>', 0)->get();
+
+        $query = Product::published()->with(['category', 'brand']);
 
         // Get current filter values
         $maxProductPrice = $this->getMaxProductPrice();
         $priceMin = $request->get('price_min', 0);
         $priceMax = $request->get('price_max', $maxProductPrice);
         $selectedCategories = $request->get('categories', []);
+        $selectedBrands = $request->get('brands', []);
+        $selectedInStock = $request->boolean('in_stock');
         $selectedRatings = $request->get('rating', []);
-        $selectedSort = $request->get('sort', '');
+        $selectedSort = $request->get('sort', 'newest');
 
         // Category filter - include child categories
         if ($request->has('categories') && is_array($request->categories) && count($request->categories)) {
@@ -310,6 +379,27 @@ class PageController extends Controller
                     $query->whereIn('category_id', $allCategoryIds);
                 }
             }
+        }
+
+        // Brand filter
+        if ($request->has('brands') && is_array($request->brands) && count($request->brands)) {
+            $query->whereIn('brand_id', $request->brands);
+        }
+
+        // In Stock filter
+        if ($request->filled('in_stock') && $request->in_stock == '1') {
+            $query->where(function($q) {
+                $q->where('manage_stock', false)
+                  ->orWhereHas('branchStock', function($bs) {
+                      $bs->where('quantity', '>', 0);
+                  })
+                  ->orWhereHas('warehouseStock', function($ws) {
+                      $ws->where('quantity', '>', 0);
+                  })
+                  ->orWhereHas('variations.stocks', function($vs) {
+                      $vs->where('quantity', '>', 0);
+                  });
+            });
         }
 
         if ($request->filled('price_min')) {
@@ -331,26 +421,32 @@ class PageController extends Controller
             case 'highToLow':
                 $query->orderBy('price', 'desc');
                 break;
+            case 'popular':
+                $query->orderBy('id', 'desc');
+                break;
             default:
                 $query->orderBy('id', 'desc');
                 break;
         }
 
-        $products = $query->paginate(12);
+        $products = $query->paginate(12)->withPath('/products')->withQueryString();
         $this->attachWishlistStatus($products);
 
         if ($request->ajax()) {
             return response()->json([
                 'success' => true,
-                'html' => view('ecommerce.partials.product-grid', ['products' => $products, 'hidePagination' => true])->render(),
+                'html' => view('ecommerce.partials.product-grid', ['products' => $products, 'hidePagination' => false])->render(),
+                'total' => $products->total(),
+                'count' => $products->count(),
                 'hasMore' => $products->hasMorePages(),
                 'currentPage' => $products->currentPage(),
+                'lastPage' => $products->lastPage(),
                 'max_price' => $maxProductPrice
             ]);
         }
 
         $pageTitle = 'Products';
-        return view('ecommerce.products', compact('products', 'categories', 'priceMin', 'priceMax', 'maxProductPrice', 'selectedCategories', 'selectedRatings', 'selectedSort', 'pageTitle'));
+        return view('ecommerce.products', compact('products', 'categories', 'brands', 'priceMin', 'priceMax', 'maxProductPrice', 'selectedCategories', 'selectedBrands', 'selectedInStock', 'selectedRatings', 'selectedSort', 'pageTitle'));
     }
 
     public function search(Request $request)

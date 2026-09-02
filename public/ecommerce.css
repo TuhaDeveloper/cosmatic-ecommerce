@@ -34,121 +34,26 @@ body {
     position: relative;
 }
 
-/* Force fixed header layers with CSS variable offsets */
-.top-bar {
-    position: fixed !important;
-    top: 0 !important;
-    left: 0 !important;
-    right: 0 !important;
-    z-index: 15000;
-    height: 32px;
-    line-height: 32px;
-    overflow: hidden;
-    background: #00512C;
-    color: #fff;
-    /* Hardware acceleration & layout containment */
-    transform: translateZ(0);
-    will-change: transform;
-    contain: layout size;
-}
-
-/* Marquee styling */
-.marquee-wrapper {
-    width: 100%;
-    overflow: hidden;
-    position: relative;
-    display: flex;
-    align-items: center;
-}
-
-@keyframes marquee-scroll {
-    0% {
-        transform: translateX(0);
-    }
-
-    100% {
-        transform: translateX(-50%);
-    }
-}
-
-.marquee-content {
-    display: flex;
-    white-space: nowrap;
-    animation: marquee-scroll 45s linear infinite;
-    will-change: transform;
-}
-
-.marquee-content:hover {
-    animation-play-state: paused;
-}
-
-.top-bar-text {
-    padding: 0 80px;
-    letter-spacing: 1.2px;
-    white-space: nowrap;
-    font-size: 13px;
-    font-weight: 500;
-    color: #ffffff;
-    opacity: 0.9;
-}
-
-header.modern-header {
-    position: fixed !important;
-    top: 32px !important;
-    left: 0 !important;
-    right: 0 !important;
-    z-index: 16000 !important;
-    background: #fff;
-    height: 90px;
-    border-bottom: 1px solid #f0f0f0;
-    /* Optimization: Force stable layer */
-    transform: translateZ(0);
-    will-change: transform;
-    backface-visibility: hidden;
-    contain: layout size;
+/* Harosa Theme Variables */
+:root {
+    --theme-primary: #a28e46;
+    --theme-primary-hover: #8e7b39;
+    --theme-primary-dark: #6d5d28;
+    --theme-primary-light: #f7f4ec;
+    --theme-primary-soft: #faf7f0;
+    --theme-dark: #1e1e1e;
+    --theme-gray: #666666;
+    --theme-light: #fcfbfa;
+    --theme-border: #e8e4dc;
+    --primary-blue: #a28e46;
+    --light-blue: #f7f4ec;
+    --dark-blue: #8e7b39;
+    --teal-primary: #a28e46;
+    --teal-dark: #8e7b39;
 }
 
 #main-content-container {
-    /* top bar (32px) + header (90px) */
-    margin-top: 122px;
-}
-
-/* ---- Navigation underline handled by core rule above; no overrides needed ---- */
-
-/* Header stack wrapper */
-#header-stack {
-    position: relative;
-    display: block;
-    width: 100%;
-}
-
-.vlog-card {
-    border-radius: 4px !important;
-    overflow: hidden;
-}
-
-:root {
-    --primary-blue: #00512C;
-    --light-blue: #E3F2FD;
-    --dark-blue: #00512C;
-    --text-dark: #333;
-    --text-light: #666;
-    --white: #FFFFFF;
-    --black: #000000;
-    --header-bg: #ffffff;
-    --header-accent: #00512C;
-    --header-text: #1a1a1a;
-    --header-text-muted: #666666;
-    --header-border: #f0f0f0;
-    --header-height: 90px;
-    --top-bar-height: 32px;
-    --nav-height: 56px;
-    --shadow-sm: 0 4px 12px rgba(0, 0, 0, 0.05);
-    --shadow-md: 0 8px 30px rgba(0, 0, 0, 0.12);
-    --drawer-z: 30000;
-    --overlay-z: 29999;
-    --teal-primary: #00512C;
-    --teal-dark: #004124;
+    margin-top: 0 !important;
 }
 
 /* Mobile/tablet: smaller header stack */

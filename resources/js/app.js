@@ -4,14 +4,12 @@ import Alpine from 'alpinejs';
 import Splide from '@splidejs/splide';
 import '@splidejs/splide/css';
 
-// App.js loaded successfully
-
 window.Alpine = Alpine;
-window.Splide = Splide; // Expose Splide globally for inline scripts
+window.Splide = Splide;
 
 Alpine.start();
 
-// Delegated wishlist toggle handler (use capture so inline stopPropagation doesn't block)
+// Delegated wishlist toggle handler
 document.addEventListener('click', async (event) => {
     const button = event.target.closest('.wishlist-btn, .product-wishlist-top');
     if (!button) return;
@@ -21,11 +19,10 @@ document.addEventListener('click', async (event) => {
     const productId = button.getAttribute('data-product-id');
     if (!productId) return;
 
-    // Fast authentication check before sending request
     const isAuth = document.querySelector('meta[name="auth-check"]')?.getAttribute('content') === '1';
     if (!isAuth) {
         if (typeof window.showToast === 'function') {
-            window.showToast('Please login first to add products to your wishlist.', 'error');
+            window.showToast('Please login first to use your wishlist.', 'error');
         }
         return;
     }
@@ -33,7 +30,6 @@ document.addEventListener('click', async (event) => {
     const icon = button.querySelector('i');
     const csrf = document.querySelector('meta[name="csrf-token"]')?.getAttribute('content') || '';
 
-    // Prevent double clicks during request
     if (button.dataset.loading === 'true') return;
     button.dataset.loading = 'true';
     button.setAttribute('disabled', 'disabled');
@@ -50,78 +46,35 @@ document.addEventListener('click', async (event) => {
             body: JSON.stringify({}),
         });
 
-        let result = null;
-        try {
-            const text = await response.text();
-            try {
-                result = JSON.parse(text);
-            } catch (e) {
-                console.error('Invalid JSON response:', text.substring(0, 100));
-                throw new Error('Server returned an invalid response. Please try again.');
-            }
-        } catch (e) {
-            throw e;
-        }
+        const result = await response.json();
 
         if (!response.ok) {
             throw new Error(result?.message || `Wishlist update failed (${response.status})`);
         }
 
-        if (result && result.success === false) {
-            if (typeof window.showToast === 'function') {
-                window.showToast(result.message || 'Could not update wishlist', 'error');
-            }
-            return;
-        }
-
-        // Decide whether this action resulted in an add or a removal
         const wasActive = button.classList.contains('active') || (icon && icon.classList.contains('fas'));
-        let added;
-        if (typeof result?.added !== 'undefined') {
-            added = !!result.added;
-        } else if (typeof result?.message === 'string') {
-            const msg = result.message.toLowerCase();
-            if (msg.includes('remove')) {
-                added = false;
-            } else if (msg.includes('added')) {
-                added = true;
-            } else {
-                added = !wasActive;
-            }
-        } else if (typeof result?.success !== 'undefined') {
-            // Backend returns success for both add/remove; infer from current UI state
-            added = !wasActive;
-        } else {
-            added = !wasActive;
-        }
+        const added = typeof result?.added !== 'undefined' ? !!result.added : !wasActive;
 
-        // Toggle UI state
         if (icon) {
             if (added) {
                 icon.classList.remove('far');
-                icon.classList.add('fas');
-                icon.classList.add('text-danger');
-                icon.classList.add('active');
+                icon.classList.add('fas', 'text-red-500', 'active');
                 button.classList.add('active');
             } else {
-                icon.classList.remove('fas');
-                icon.classList.remove('text-danger');
+                icon.classList.remove('fas', 'text-red-500', 'active');
                 icon.classList.add('far');
-                icon.classList.remove('active');
                 button.classList.remove('active');
             }
         }
 
-        // Show toast if available
         if (typeof window.showToast === 'function') {
-            window.showToast(added ? 'Added to wishlist' : 'Removed from wishlist');
+            window.showToast(added ? 'Added to wishlist!' : 'Removed from wishlist!');
         }
-        // Update wishlist count if helper exists
         if (typeof window.updateWishlistCount === 'function') {
             window.updateWishlistCount();
         }
     } catch (err) {
-        console.error(err);
+        console.error('Wishlist error:', err);
         if (typeof window.showToast === 'function') {
             window.showToast('Could not update wishlist', 'error');
         }
@@ -131,58 +84,564 @@ document.addEventListener('click', async (event) => {
     }
 }, true);
 
-// Custom Banner Carousel (works without Bootstrap)
-function initCategorySplide() {
+// ── Quick Variation State ──
+let currentQuickModalProduct = null;
+let selectedQuickAttributes = {};
+let selectedQuickVariation = null;
+
+// Global quick add to cart handler
+window.handleQuickAddToCart = async function(productId, hasVariations, productSlug) {
+    if (hasVariations) {
+        window.openQuickVariationModal(productId, productSlug);
+    } else {
+        // Direct add to cart for simple products
+        const csrf = document.querySelector('meta[name="csrf-token"]')?.getAttribute('content') || '';
+        try {
+            const response = await fetch(`/cart/add/${productId}`, {
+                method: 'POST',
+                headers: {
+                    'X-Requested-With': 'XMLHttpRequest',
+                    'Accept': 'application/json',
+                    'Content-Type': 'application/json',
+                    'X-CSRF-TOKEN': csrf,
+                },
+                body: JSON.stringify({}),
+            });
+
+            const result = await response.json();
+            if (response.ok && result.success) {
+                if (typeof window.showToast === 'function') {
+                    window.showToast('Product added to cart!');
+                }
+                if (typeof window.updateCartQtyBadge === 'function') {
+                    window.updateCartQtyBadge();
+                }
+                if (typeof window.openOffcanvasCart === 'function') {
+                    window.openOffcanvasCart();
+                }
+            } else if (result.error_type === 'variation_required') {
+                window.openQuickVariationModal(productId, productSlug);
+            } else {
+                if (typeof window.showToast === 'function') {
+                    window.showToast(result.message || 'Failed to add product to cart', 'error');
+                }
+            }
+        } catch (e) {
+            console.error('Cart add error:', e);
+            if (typeof window.showToast === 'function') {
+                window.showToast('Failed to add product to cart', 'error');
+            }
+        }
+    }
+};
+
+// Open Quick Variation Modal
+window.openQuickVariationModal = async function(productId, productSlug) {
+    const modal = document.getElementById('quickVariationModal');
+    const loading = document.getElementById('quickModalLoading');
+    const content = document.getElementById('quickModalContent');
+    if (!modal) return;
+
+    modal.classList.remove('opacity-0', 'pointer-events-none');
+    modal.classList.add('opacity-100', 'pointer-events-auto');
+    const panel = modal.querySelector('div');
+    if (panel) {
+        panel.classList.remove('translate-y-full', 'sm:scale-95');
+        panel.classList.add('translate-y-0', 'sm:scale-100');
+    }
+
+    if (loading) loading.classList.remove('hidden');
+    if (content) content.classList.add('hidden');
+
     try {
-        const categoryEl = document.getElementById('categorySplide');
-        if (categoryEl && !categoryEl.__splideMounted) {
-            const splide = new Splide(categoryEl, {
+        const response = await fetch(`/api/products/${productId}/quick-variation`, {
+            headers: {
+                'X-Requested-With': 'XMLHttpRequest',
+                'Accept': 'application/json',
+            }
+        });
+        const json = await response.json();
+        if (!json.success || !json.data) {
+            window.location.href = `/product/${productSlug}`;
+            return;
+        }
+
+        currentQuickModalProduct = json.data;
+        selectedQuickAttributes = {};
+        selectedQuickVariation = null;
+
+        // Reset Qty
+        const qtyInput = document.getElementById('quickModalQty');
+        if (qtyInput) qtyInput.value = '1';
+
+        // Render Data
+        document.getElementById('quickModalImg').src = currentQuickModalProduct.image;
+        document.getElementById('quickModalCategory').textContent = currentQuickModalProduct.category;
+        document.getElementById('quickModalTitle').textContent = currentQuickModalProduct.name;
+        document.getElementById('quickModalViewDetails').href = `/product/${currentQuickModalProduct.slug}`;
+
+        updateQuickModalPrice();
+
+        // Render Attributes (Size, Volume, Color)
+        const attrContainer = document.getElementById('quickModalAttributes');
+        attrContainer.innerHTML = '';
+
+        if (currentQuickModalProduct.attributes && currentQuickModalProduct.attributes.length > 0) {
+            currentQuickModalProduct.attributes.forEach(attr => {
+                const groupDiv = document.createElement('div');
+                groupDiv.className = 'space-y-1.5';
+
+                const label = document.createElement('span');
+                label.className = 'text-xs font-semibold text-stone-700 uppercase tracking-wider block';
+                label.textContent = `Select ${attr.name}:`;
+                groupDiv.appendChild(label);
+
+                const optionsDiv = document.createElement('div');
+                optionsDiv.className = 'flex flex-wrap gap-2';
+
+                attr.values.forEach((val, idx) => {
+                    const btn = document.createElement('button');
+                    btn.type = 'button';
+                    btn.className = `quick-attr-btn px-3.5 py-1.5 text-xs font-semibold uppercase tracking-wider rounded border transition-all cursor-pointer focus:outline-none ${idx === 0 ? 'border-[#a28e46] bg-[#faf7f0] text-[#a28e46]' : 'border-stone-300 bg-white text-stone-700 hover:border-stone-400'}`;
+                    btn.textContent = val.label;
+                    btn.dataset.attrId = attr.id;
+                    btn.dataset.valueId = val.id;
+
+                    btn.addEventListener('click', function() {
+                        optionsDiv.querySelectorAll('.quick-attr-btn').forEach(b => {
+                            b.classList.remove('border-[#a28e46]', 'bg-[#faf7f0]', 'text-[#a28e46]');
+                            b.classList.add('border-stone-300', 'bg-white', 'text-stone-700');
+                        });
+                        this.classList.remove('border-stone-300', 'bg-white', 'text-stone-700');
+                        this.classList.add('border-[#a28e46]', 'bg-[#faf7f0]', 'text-[#a28e46]');
+
+                        selectedQuickAttributes[attr.id] = val.id;
+                        matchQuickVariation();
+                    });
+
+                    // Auto-select first option
+                    if (idx === 0) {
+                        selectedQuickAttributes[attr.id] = val.id;
+                    }
+
+                    optionsDiv.appendChild(btn);
+                });
+
+                groupDiv.appendChild(optionsDiv);
+                attrContainer.appendChild(groupDiv);
+            });
+        }
+
+        matchQuickVariation();
+
+        if (loading) loading.classList.add('hidden');
+        if (content) content.classList.remove('hidden');
+
+    } catch (err) {
+        console.error('Quick variation load error:', err);
+        window.location.href = `/product/${productSlug}`;
+    }
+};
+
+// Match selected combination to variation
+function matchQuickVariation() {
+    if (!currentQuickModalProduct || !currentQuickModalProduct.variations) return;
+
+    selectedQuickVariation = currentQuickModalProduct.variations.find(v => {
+        return Object.keys(selectedQuickAttributes).every(attrId => {
+            return String(v.attribute_combinations[attrId]) === String(selectedQuickAttributes[attrId]);
+        });
+    });
+
+    updateQuickModalPrice();
+
+    const stockEl = document.getElementById('quickModalStockStatus');
+    const addBtn = document.getElementById('quickModalAddToCartBtn');
+
+    if (selectedQuickVariation) {
+        if (selectedQuickVariation.image) {
+            document.getElementById('quickModalImg').src = selectedQuickVariation.image;
+        }
+        if (selectedQuickVariation.in_stock) {
+            stockEl.textContent = `In Stock (${selectedQuickVariation.stock} available)`;
+            stockEl.className = 'text-[11px] text-emerald-600 font-medium';
+            addBtn.disabled = false;
+            addBtn.classList.remove('opacity-50', 'cursor-not-allowed');
+        } else {
+            stockEl.textContent = 'Out of Stock';
+            stockEl.className = 'text-[11px] text-red-500 font-medium';
+            addBtn.disabled = true;
+            addBtn.classList.add('opacity-50', 'cursor-not-allowed');
+        }
+    } else {
+        stockEl.textContent = 'Please select options';
+        stockEl.className = 'text-[11px] text-amber-600 font-medium';
+    }
+}
+
+function updateQuickModalPrice() {
+    if (!currentQuickModalProduct) return;
+    const priceEl = document.getElementById('quickModalPrice');
+    const origPriceEl = document.getElementById('quickModalOriginalPrice');
+
+    const item = selectedQuickVariation || currentQuickModalProduct;
+    const price = Number(item.price || 0);
+    const effPrice = Number(item.effective_price || item.discount || price);
+
+    priceEl.textContent = `৳ ${effPrice.toLocaleString()}`;
+    if (price > effPrice) {
+        origPriceEl.textContent = `৳ ${price.toLocaleString()}`;
+        origPriceEl.classList.remove('hidden');
+    } else {
+        origPriceEl.classList.add('hidden');
+    }
+}
+
+// Close Quick Modal
+window.closeQuickVariationModal = function(e) {
+    if (e && e.target && e.target.id !== 'quickVariationModal') return;
+    const modal = document.getElementById('quickVariationModal');
+    if (!modal) return;
+    modal.classList.add('opacity-0', 'pointer-events-none');
+    modal.classList.remove('opacity-100', 'pointer-events-auto');
+    const panel = modal.querySelector('div');
+    if (panel) {
+        panel.classList.add('translate-y-full', 'sm:scale-95');
+        panel.classList.remove('translate-y-0', 'sm:scale-100');
+    }
+};
+
+// Change Quick Qty
+window.changeQuickModalQty = function(delta) {
+    const input = document.getElementById('quickModalQty');
+    if (!input) return;
+    let val = parseInt(input.value) || 1;
+    val += delta;
+    if (val < 1) val = 1;
+    input.value = val;
+};
+
+// Submit Quick Add To Cart
+window.submitQuickModalAddToCart = async function() {
+    if (!currentQuickModalProduct) return;
+
+    if (currentQuickModalProduct.has_variations && !selectedQuickVariation) {
+        if (typeof window.showToast === 'function') {
+            window.showToast('Please select variation options first.', 'error');
+        }
+        return;
+    }
+
+    const qty = parseInt(document.getElementById('quickModalQty')?.value) || 1;
+    const addBtn = document.getElementById('quickModalAddToCartBtn');
+    const origHtml = addBtn.innerHTML;
+
+    addBtn.disabled = true;
+    addBtn.innerHTML = '<div class="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin"></div> Adding...';
+
+    const csrf = document.querySelector('meta[name="csrf-token"]')?.getAttribute('content') || '';
+    const payload = {
+        qty: qty,
+        variation_id: selectedQuickVariation ? selectedQuickVariation.id : null,
+    };
+
+    try {
+        const response = await fetch(`/cart/add-page/${currentQuickModalProduct.id}`, {
+            method: 'POST',
+            headers: {
+                'X-Requested-With': 'XMLHttpRequest',
+                'Accept': 'application/json',
+                'Content-Type': 'application/json',
+                'X-CSRF-TOKEN': csrf,
+            },
+            body: JSON.stringify(payload),
+        });
+
+        const result = await response.json();
+
+        if (response.ok && result.success) {
+            closeQuickVariationModal();
+            if (typeof window.showToast === 'function') {
+                window.showToast('Product added to cart!');
+            }
+            if (typeof window.updateCartQtyBadge === 'function') {
+                window.updateCartQtyBadge();
+            }
+            if (typeof window.openOffcanvasCart === 'function') {
+                window.openOffcanvasCart();
+            }
+        } else {
+            if (typeof window.showToast === 'function') {
+                window.showToast(result.message || 'Failed to add product to cart', 'error');
+            }
+        }
+    } catch (err) {
+        console.error('Cart submit error:', err);
+        if (typeof window.showToast === 'function') {
+            window.showToast('Failed to add product to cart', 'error');
+        }
+    } finally {
+        addBtn.disabled = false;
+        addBtn.innerHTML = origHtml;
+    }
+};
+
+// Render Reusable Harosa Product Card (Matching image with hover Add to Cart button)
+function renderHarosaProductCard(product) {
+    try {
+        const price = Number(product.price || 0);
+        const discount = Number(product.discount || 0);
+        const finalPrice = discount > 0 ? discount : price;
+        const discountPercent = discount > 0 && discount < price ? Math.round(((price - discount) / price) * 100) : 0;
+        const image = product.image || '/static/default-product.jpg';
+        const isWishlisted = product.is_wishlisted === true;
+        const categoryName = product.category_name || (product.category ? (product.category.name || product.category) : 'Studio Design');
+        const hasVariations = product.has_variations === true || product.has_variations === 1 || product.has_variations === '1';
+
+        return `
+        <li class="splide__slide">
+            <div class="group relative bg-white border-0 overflow-hidden flex flex-col items-center text-center p-2 transition-all duration-300" data-href="/product/${product.slug}">
+                <div class="relative w-full aspect-[4/5] overflow-hidden bg-stone-50 mb-2.5 group/img">
+                    <!-- Black NEW Tag (top-left) -->
+                    <span class="absolute top-0 left-0 bg-[#222222] text-white text-[10px] font-bold px-2.5 py-0.5 rounded-none uppercase tracking-wider z-10">NEW</span>
+                    
+                    <!-- Black Discount Tag (top-right) -->
+                    ${discountPercent > 0 ? `<span class="absolute top-0 right-0 bg-[#222222] text-white text-[10px] font-bold px-2 py-0.5 rounded-none uppercase tracking-wider z-10">-${discountPercent}%</span>` : ''}
+                    
+                    <!-- Main Product Image -->
+                    <a href="/product/${product.slug}" class="block w-full h-full">
+                        <img src="${image}" class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500 block" alt="${product.name}" loading="lazy" onerror="this.onerror=null; this.src='/static/default-product.jpg';">
+                    </a>
+
+                    <!-- Mobile Quick 1-Tap Add Button (Always visible on mobile/touch screens) -->
+                    <button type="button" 
+                            class="md:hidden absolute bottom-2 right-2 w-8 h-8 rounded-full bg-[#a28e46] active:bg-[#8e7b39] text-white shadow-md flex items-center justify-center text-xs z-20 cursor-pointer focus:outline-none transition-transform active:scale-95"
+                            onclick="event.stopPropagation(); handleQuickAddToCart(${product.id}, ${hasVariations ? 'true' : 'false'}, '${product.slug}');"
+                            aria-label="Add to cart">
+                        <i class="fa-solid fa-bag-shopping text-[11px]"></i>
+                    </button>
+
+                    <!-- Desktop Hover Quick Add To Cart Button (Slides up on desktop hover) -->
+                    <div class="hidden md:flex absolute inset-x-0 bottom-0 p-2.5 bg-gradient-to-t from-black/70 via-black/30 to-transparent translate-y-full group-hover/img:translate-y-0 transition-transform duration-300 items-center justify-center z-20">
+                        <button type="button" 
+                                class="w-full bg-[#a28e46] hover:bg-[#8e7b39] text-white font-bold text-[11px] uppercase tracking-wider py-2 px-3 rounded-none shadow-md transition-all flex items-center justify-center gap-1.5 cursor-pointer focus:outline-none"
+                                onclick="event.stopPropagation(); handleQuickAddToCart(${product.id}, ${hasVariations ? 'true' : 'false'}, '${product.slug}');">
+                            <i class="fa-solid fa-cart-shopping text-[10px]"></i>
+                            <span>ADD TO CART</span>
+                        </button>
+                    </div>
+                </div>
+                
+                <div class="w-full flex flex-col items-center text-center">
+                    <!-- Category with Tag Icon -->
+                    <div class="text-[11px] text-gray-400 flex items-center justify-center gap-1 mb-1 font-medium">
+                        <i class="fa-solid fa-tag text-[9px] text-gray-400"></i>
+                        <span class="truncate max-w-[160px]">${categoryName}</span>
+                    </div>
+                    
+                    <!-- Serif Title -->
+                    <a href="/product/${product.slug}" class="font-serif text-xs md:text-sm font-bold text-gray-900 hover:text-[#a28e46] uppercase tracking-wider text-center block leading-tight line-clamp-1 no-underline transition-colors mb-1.5" title="${product.name}">
+                        ${product.name}
+                    </a>
+                    
+                    <!-- Prices -->
+                    <div class="flex items-center justify-center gap-2 font-bold text-xs md:text-sm">
+                        ${discountPercent > 0 ? `<span class="text-gray-400 line-through text-xs font-normal">৳ ${price.toLocaleString()}</span>` : ''}
+                        <span class="text-[#a28e46]">৳ ${finalPrice.toLocaleString()}</span>
+                    </div>
+                </div>
+            </div>
+        </li>`;
+    } catch (e) {
+        console.error('Error rendering product card:', e);
+        return '';
+    }
+}
+
+// Splide instances cache
+const splideInstances = {};
+
+// Initialize Splide for Product Sections
+function fetchAndMountProductSplide(endpoint, wrapperId, listId, fallbackId) {
+    const wrapper = document.getElementById(wrapperId);
+    const listEl = document.getElementById(listId);
+    const fallback = document.getElementById(fallbackId);
+
+    if (!wrapper || !listEl) return;
+
+    if (fallback) {
+        fallback.innerHTML = Array.from({ length: 4 }, () => `
+            <div class="bg-white border-0 rounded p-2 animate-pulse text-center">
+                <div class="aspect-[4/5] bg-stone-100 rounded mb-2.5"></div>
+                <div class="h-3 bg-stone-200 rounded w-1/3 mx-auto mb-1.5"></div>
+                <div class="h-3.5 bg-stone-200 rounded w-3/4 mx-auto mb-1.5"></div>
+                <div class="h-3 bg-stone-200 rounded w-1/4 mx-auto"></div>
+            </div>
+        `).join('');
+        fallback.style.display = 'grid';
+    }
+
+    fetch(endpoint, {
+        headers: {
+            'X-Requested-With': 'XMLHttpRequest',
+            'Accept': 'application/json',
+        }
+    })
+    .then(res => res.json())
+    .then(data => {
+        const products = data.success ? data.data : (Array.isArray(data) ? data : []);
+
+        if (!products || products.length === 0) {
+            if (fallback) fallback.style.display = 'none';
+            if (wrapper) wrapper.style.display = 'none';
+            return;
+        }
+
+        if (fallback) fallback.style.display = 'none';
+
+        listEl.innerHTML = products.map(p => renderHarosaProductCard(p)).join('');
+
+        const perPageCalc = window.innerWidth >= 1200 ? 4 : window.innerWidth >= 992 ? 3 : 2;
+        if (products.length > 0 && products.length < perPageCalc * 2) {
+            listEl.innerHTML = listEl.innerHTML.repeat(Math.ceil((perPageCalc * 2) / products.length));
+        }
+
+        wrapper.style.visibility = 'visible';
+        requestAnimationFrame(() => {
+            if (splideInstances[wrapperId]) {
+                try { splideInstances[wrapperId].destroy(); } catch(e){}
+            }
+
+            const splide = new Splide(wrapper, {
                 type: 'loop',
-                perPage: 3,
-                perMove: 1,
+                perPage: perPageCalc,
+                gap: '20px',
+                pagination: false,
+                arrows: true,
+                autoplay: true,
+                interval: 4000,
+                pauseOnHover: true,
+                rewind: true,
+                breakpoints: {
+                    1199: { perPage: 3 },
+                    991: { perPage: 2 },
+                    575: { perPage: 2 }
+                }
+            });
+            splide.mount();
+            splideInstances[wrapperId] = splide;
+        });
+    })
+    .catch(err => {
+        console.error(`Failed to load products from ${endpoint}:`, err);
+        if (fallback) fallback.style.display = 'none';
+        if (wrapper) wrapper.style.display = 'none';
+    });
+}
+
+document.addEventListener('DOMContentLoaded', function () {
+    // 1. Hero Splide
+    const heroEl = document.getElementById('heroSplide');
+    if (heroEl && !heroEl.__splideMounted) {
+        try {
+            const heroSplide = new Splide(heroEl, {
+                type: 'loop',
+                autoplay: true,
+                interval: 5000,
+                pauseOnHover: true,
+                arrows: true,
+                pagination: true,
+                drag: true,
+                rewind: true,
+                speed: 500,
+            });
+            heroSplide.mount();
+            heroEl.__splideMounted = true;
+        } catch (e) {
+            console.error('Failed to mount hero Splide:', e);
+        }
+    }
+
+    // 2. Featured Category Splide
+    const catEl = document.getElementById('categorySplide');
+    if (catEl && !catEl.__splideMounted) {
+        try {
+            const catSplide = new Splide(catEl, {
+                type: 'loop',
+                perPage: 4,
                 gap: '16px',
                 pagination: false,
                 arrows: true,
-                drag: true,
-                flickPower: 300,
-                releaseWheel: true,
-                keyboard: 'focused',
-                autoplay: false,
-                interval: 2000,
-                pauseOnHover: true,
-                rewind: true,
                 breakpoints: {
                     1199: { perPage: 3 },
                     767: { perPage: 2 },
                     575: { perPage: 2 }
                 }
             });
-            splide.mount();
-            categoryEl.__splideMounted = true;
+            catSplide.mount();
+            catEl.__splideMounted = true;
+        } catch (e) {
+            console.error('Failed to mount category Splide:', e);
         }
-    } catch (e) {
-        console.error('Failed to mount category Splide:', e);
     }
-}
 
-// Initialize only once to prevent layout shifts
-document.addEventListener('DOMContentLoaded', initCategorySplide);
+    // 3. Mount initial tab (New Arrivals) & Weekly Deals Section
+    fetchAndMountProductSplide('/api/products/new-arrivals', 'newArrivalsSplide', 'newArrivalsSplideList', 'newArrivalsFallback');
+    fetchAndMountProductSplide('/api/products/best-deals', 'weeklyDealsSplide', 'weeklyDealsSplideList', 'weeklyDealsFallback');
 
-document.addEventListener('DOMContentLoaded', function () {
-    // Vlog Splide
-    (function initVlogSplide() {
-        const vlogEl = document.getElementById('vlogSplide');
-        if (!vlogEl || vlogEl.__splideMounted) return;
+    // 4. Tab Switcher Logic (NEW ARRIVAL, BESTSELLER, FEATURED PRODUCTS)
+    const tabButtons = document.querySelectorAll('.harosa-tab-btn');
+    const tabPanes = document.querySelectorAll('.harosa-tab-pane');
+
+    tabButtons.forEach(btn => {
+        btn.addEventListener('click', function () {
+            const targetId = this.getAttribute('data-tab-target');
+            if (!targetId) return;
+
+            tabButtons.forEach(b => {
+                b.classList.remove('active', 'text-[#a28e46]');
+                b.classList.add('text-gray-400');
+                const dot = b.querySelector('.dot-indicator, span:first-child');
+                if (dot) dot.classList.replace('bg-[#a28e46]', 'bg-gray-300');
+            });
+
+            this.classList.add('active', 'text-[#a28e46]');
+            this.classList.remove('text-gray-400');
+            const activeDot = this.querySelector('.dot-indicator, span:first-child');
+            if (activeDot) activeDot.classList.replace('bg-gray-300', 'bg-[#a28e46]');
+
+            tabPanes.forEach(pane => pane.classList.add('hidden'));
+            const targetPane = document.getElementById(targetId);
+            if (targetPane) targetPane.classList.remove('hidden');
+
+            if (targetId === 'tab-new-arrivals') {
+                if (!splideInstances['newArrivalsSplide']) {
+                    fetchAndMountProductSplide('/api/products/new-arrivals', 'newArrivalsSplide', 'newArrivalsSplideList', 'newArrivalsFallback');
+                }
+            } else if (targetId === 'tab-bestseller') {
+                if (!splideInstances['mostSoldSplide']) {
+                    fetchAndMountProductSplide('/api/products/most-sold', 'mostSoldSplide', 'mostSoldSplideList', 'mostSoldFallback');
+                }
+            } else if (targetId === 'tab-featured') {
+                if (!splideInstances['bestDealsSplide']) {
+                    fetchAndMountProductSplide('/api/products/best-deals', 'bestDealsSplide', 'bestDealsSplideList', 'bestDealsFallback');
+                }
+            }
+        });
+    });
+
+    // 5. Vlog Splide
+    const vlogEl = document.getElementById('vlogSplide');
+    if (vlogEl && !vlogEl.__splideMounted) {
         try {
             const vlogSplide = new Splide(vlogEl, {
                 perPage: 2,
-                gap: '24px',
+                gap: '20px',
                 pagination: false,
                 arrows: true,
-                drag: false, // disable mouse/touch drag to avoid YouTube iframe conflicts
-                keyboard: 'focused',
+                drag: false,
                 breakpoints: {
-                    991: { perPage: 1, gap: '16px' }
+                    991: { perPage: 1 }
                 }
             });
             vlogSplide.mount();
@@ -190,992 +649,5 @@ document.addEventListener('DOMContentLoaded', function () {
         } catch (e) {
             console.error('Failed to mount vlog Splide:', e);
         }
-    })();
-
-    // Build Top Selling Splide from API
-    (function initMostSoldSplide() {
-        const wrapper = document.getElementById('mostSoldSplide');
-        const listEl = document.getElementById('mostSoldSplideList');
-        const fallback = document.getElementById('mostSoldFallback');
-
-        if (!wrapper || !listEl) return;
-
-        // Retry function that can be called from retry button
-        let topSellingAbortController = null;
-        const loadTopSelling = function (retryCount = 0) {
-            const maxRetries = 3; // Increased retries
-
-            // Cancel any previous request
-            if (topSellingAbortController) {
-                topSellingAbortController.abort();
-            }
-            topSellingAbortController = new AbortController();
-
-            // Add loading state with skeleton loaders
-            if (fallback) {
-                const perPage = window.innerWidth >= 1200 ? 4 : window.innerWidth >= 992 ? 3 : 2;
-                const colClass = perPage === 4 ? 'col-3' : perPage === 3 ? 'col-4' : 'col-6';
-                const skeletonHTML = Array.from({ length: perPage }, () => `
-                    <div class="${colClass}">
-                        <div class="product-skeleton">
-                            <div class="skeleton-image"></div>
-                            <div class="skeleton-wishlist"></div>
-                            <div class="skeleton-content">
-                                <div class="skeleton-title"></div>
-                                <div class="skeleton-title"></div>
-                                <div class="skeleton-price"></div>
-                                <div class="skeleton-button"></div>
-                            </div>
-                        </div>
-                    </div>
-                `).join('');
-                fallback.innerHTML = skeletonHTML;
-                fallback.style.display = 'flex';
-                fallback.style.flexWrap = 'wrap';
-            }
-
-            const startTime = performance.now();
-            const timeout = 30000; // 30 second timeout (increased for big data on live server)
-
-            // Create timeout promise
-            const timeoutPromise = new Promise((_, reject) => {
-                setTimeout(() => {
-                    topSellingAbortController.abort();
-                    reject(new Error('Request timeout'));
-                }, timeout);
-            });
-
-            // Race between fetch and timeout
-            Promise.race([
-                fetch('/api/products/most-sold', {
-                    headers: {
-                        'X-Requested-With': 'XMLHttpRequest',
-                        'Accept': 'application/json',
-                        'Content-Type': 'application/json'
-                    },
-                    signal: topSellingAbortController.signal
-                }),
-                timeoutPromise
-            ])
-                .then(response => {
-                    if (!response.ok) {
-                        const error = new Error(`HTTP ${response.status}: ${response.statusText}`);
-                        error.response = response;
-                        throw error;
-                    }
-                    return response.json();
-                })
-                .then(data => {
-                    const endTime = performance.now();
-                    const loadTime = Math.round(endTime - startTime);
-
-                    // Handle new API response format
-                    const products = data.success ? data.data : data;
-
-                    if (!Array.isArray(products) || products.length === 0) {
-                        if (fallback) {
-                            fallback.innerHTML = '<div class="col-12 text-center text-muted"><i class="fas fa-box-open fa-2x mb-3"></i><p>No top selling products found.</p></div>';
-                            fallback.style.display = 'block';
-                        }
-                        if (wrapper) wrapper.style.display = 'none';
-                        return;
-                    }
-
-                    if (fallback) fallback.style.display = 'none';
-
-                    // Show skeleton loaders in carousel while rendering
-                    const perPageCalc = window.innerWidth >= 1200 ? 4 : window.innerWidth >= 992 ? 3 : 2;
-                    listEl.innerHTML = Array.from({ length: perPageCalc }, () => `
-                    <li class="splide__slide">
-                        <div class="product-skeleton">
-                            <div class="skeleton-image"></div>
-                            <div class="skeleton-wishlist"></div>
-                            <div class="skeleton-content">
-                                <div class="skeleton-title"></div>
-                                <div class="skeleton-title"></div>
-                                <div class="skeleton-price"></div>
-                                <div class="skeleton-button"></div>
-                            </div>
-                        </div>
-                    </li>
-                `).join('');
-
-                    // Render actual products immediately (skeleton already shown)
-                    listEl.innerHTML = products.map(product => {
-                        try {
-                            const rating = product.avg_rating ?? 0;
-                            const reviews = product.total_reviews ?? 0;
-                            const price = Number(product.price || 0);
-                            const discount = Number(product.discount || 0);
-                            const finalPrice = discount > 0 ? discount : price;
-                            const image = product.image || '/static/default-product.jpg';
-                            const hasStock = product.has_stock !== false;
-                            const isWishlisted = product.is_wishlisted === true;
-
-                            return `
-                        <li class="splide__slide">
-                            <div class="product-card position-relative no-hover-border" data-href="/product/${product.slug}" data-gtm-id="${product.id}" data-gtm-name="${product.name}" data-gtm-price="${finalPrice}" data-gtm-category="${product.category_name || product.category || ''}">
-                                ${discount > 0 && discount < price ? `<div class="product-discount-label">-${Math.round(((price - discount) / price) * 100)}%</div>` : ''}
-                                <button class="product-wishlist-top ${isWishlisted ? ' active' : ''}" data-product-id="${product.id}" title="${isWishlisted ? 'Remove from wishlist' : 'Add to wishlist'}" type="button" onclick="event.stopPropagation();">
-                                    <i class="${isWishlisted ? 'fas' : 'far'} fa-heart"></i>
-                                </button>
-                                <div class="product-image-container">
-                                    <img src="${image}" class="product-image" alt="${product.name}" loading="lazy" onerror="this.onerror=null; this.src='/static/default-product.jpg';">
-                                </div>
-                                <div class="product-info p-3">
-                                    <a href="/product/${product.slug}" style="text-decoration: none; font-weight: 500; color: #374151; display: block; line-height: 1.4;" class="product-title" title="${product.name}">${product.name} ${(product.style_number || product.sku) ? ` <span class="style-number text-muted" style="font-size: 0.85em; font-weight: 400;">(${(product.style_number || product.sku)})</span>` : ''}</a>
-                                    ${discount > 0 && discount < price ? `<div class="save-badge mt-1" style="font-size: 9px; padding: 2px 6px;">Save ৳ ${(price - discount).toLocaleString()}</div>` : ''}
-                                    <div class="d-flex justify-content-between align-items-center mt-1">
-                                        <div class="price-container">
-                                            <div class="product-price-current fw-bold" style="color: #1a1a1a; font-size: 1.1rem;">৳ ${finalPrice.toLocaleString()}</div>
-                                            ${discount > 0 && discount < price ? `
-                                                <div class="d-flex align-items-center gap-2">
-                                                    <span class="product-price-old text-muted text-decoration-line-through" style="font-size: 0.8rem;">৳ ${price.toLocaleString()}</span>
-                                                    <span class="product-discount-text" style="color: #ef4444; font-size: 0.8rem; font-weight: 600;">-${Math.round(((price - discount) / price) * 100)}%</span>
-                                                </div>
-                                            ` : ''}
-                                        </div>
-                                        <a href="/product/${product.slug}" class="floating-cart-btn" onclick="event.stopPropagation();" title="Add to Cart">
-                                            <i class="fas fa-shopping-cart"></i>
-                                        </a>
-                                    </div>
-                                </div>
-                            </div>
-                        </li>`;
-                        } catch (error) {
-                            console.error('Error rendering product:', product, error);
-                            return ''; // Skip this product if there's an error
-                        }
-                    }).filter(html => html).join('');
-
-                    // If we have fewer products than perPage, duplicate them to enable looping
-                    if (products.length > 0 && products.length < perPageCalc * 2) {
-                        const originalHtml = listEl.innerHTML;
-                        const timesToRepeat = Math.ceil((perPageCalc * 2) / products.length);
-                        listEl.innerHTML = originalHtml.repeat(timesToRepeat);
-                    }
-
-                    // Initialize Splide carousel - optimized to prevent shake
-                    // Set visibility first, then wait for next frame before initializing
-                    wrapper.style.visibility = 'visible';
-                    requestAnimationFrame(() => {
-                        const actualSlideCount = listEl.querySelectorAll('.splide__slide').length;
-                        const perPage = window.innerWidth >= 1200 ? 4 : window.innerWidth >= 992 ? 3 : 2;
-                        const canLoop = actualSlideCount >= perPage * 2;
-
-                        console.log('Top Selling - Original Products:', products.length, 'Total Slides:', actualSlideCount, 'PerPage:', perPage, 'CanLoop:', canLoop);
-
-                        const topSplide = new Splide(wrapper, {
-                            type: 'loop',
-                            perPage: perPage,
-                            gap: '16px',
-                            pagination: false,
-                            arrows: true,
-                            autoplay: canLoop,
-                            interval: 1500,
-                            pauseOnHover: true,
-                            rewind: true,
-                            speed: 400,
-                            easing: 'ease',
-                            breakpoints: {
-                                1199: { perPage: 3 },
-                                991: { perPage: 2 },
-                                575: { perPage: 2 }
-                            }
-                        });
-                        topSplide.mount();
-
-                        // Force autoplay if we have enough slides
-                        if (canLoop && topSplide.Components && topSplide.Components.Autoplay) {
-                            topSplide.Components.Autoplay.play();
-                            console.log('Top Selling autoplay enabled and started');
-                        }
-                    });
-
-                    // Log performance metrics
-                    console.log(`Top selling products loaded in ${loadTime}ms`, {
-                        productsCount: products.length,
-                        loadTime: loadTime,
-                        cached: data.meta?.cached || false
-                    });
-                })
-                .catch(error => {
-                    console.error('Failed to load top selling products:', error);
-
-                    // Don't retry if request was aborted manually
-                    if (error.name === 'AbortError' && !error.message.includes('timeout')) {
-                        return;
-                    }
-
-                    // Auto-retry for transient errors (network, timeout, server errors)
-                    const isRetryableError =
-                        error.message.includes('Network') ||
-                        error.message.includes('Failed to fetch') ||
-                        error.message.includes('timeout') ||
-                        error.message.includes('Request timeout') ||
-                        (error.response && [500, 502, 503, 504, 0].includes(error.response.status));
-
-                    if (retryCount < maxRetries && isRetryableError) {
-                        console.log(`Retrying top selling products (attempt ${retryCount + 1}/${maxRetries})...`);
-                        setTimeout(() => {
-                            loadTopSelling(retryCount + 1);
-                        }, 1000 * (retryCount + 1)); // Exponential backoff: 1s, 2s, 3s
-                        return;
-                    }
-
-                    if (fallback) {
-                        fallback.innerHTML = `
-                        <div class="col-12 text-center text-danger">
-                            <i class="fas fa-exclamation-triangle fa-2x mb-3"></i>
-                            <p>Failed to load top selling products.</p>
-                            <button class="btn btn-outline-primary btn-sm" onclick="window.loadTopSellingProducts && window.loadTopSellingProducts()">
-                                <i class="fas fa-refresh me-1"></i>Retry
-                            </button>
-                        </div>
-                    `;
-                        fallback.style.display = 'block';
-                    }
-                    if (wrapper) wrapper.style.display = 'none';
-                });
-        }; // Close loadTopSelling function
-
-        // Make loadTopSelling available globally for retry button
-        window.loadTopSellingProducts = function () {
-            loadTopSelling(0);
-        };
-
-        // Initial load
-        loadTopSelling(0);
-    })();
-
-    // Build New Arrivals Splide from API
-    (function initNewArrivalsSplide() {
-        const wrapper = document.getElementById('newArrivalsSplide');
-        const listEl = document.getElementById('newArrivalsSplideList');
-        const fallback = document.getElementById('newArrivalsFallback');
-
-        if (!wrapper || !listEl) return;
-
-        // Retry function that can be called from retry button
-        let newArrivalsAbortController = null;
-        const loadNewArrivals = function (retryCount = 0) {
-            const maxRetries = 3; // Increased retries
-
-            // Cancel any previous request
-            if (newArrivalsAbortController) {
-                newArrivalsAbortController.abort();
-            }
-            newArrivalsAbortController = new AbortController();
-
-            if (fallback) {
-                const perPage = window.innerWidth >= 1200 ? 4 : window.innerWidth >= 992 ? 3 : 2;
-                const colClass = perPage === 4 ? 'col-3' : perPage === 3 ? 'col-4' : 'col-6';
-                const skeletonHTML = Array.from({ length: perPage }, () => `
-                    <div class="${colClass}">
-                        <div class="product-skeleton">
-                            <div class="skeleton-image"></div>
-                            <div class="skeleton-wishlist"></div>
-                            <div class="skeleton-content">
-                                <div class="skeleton-title"></div>
-                                <div class="skeleton-title"></div>
-                                <div class="skeleton-price"></div>
-                                <div class="skeleton-button"></div>
-                            </div>
-                        </div>
-                    </div>
-                `).join('');
-                fallback.innerHTML = skeletonHTML;
-                fallback.style.display = 'flex';
-                fallback.style.flexWrap = 'wrap';
-            }
-
-            const startTime = performance.now();
-            const timeout = 30000; // 30 second timeout (increased for big data on live server)
-
-            // Create timeout promise
-            const timeoutPromise = new Promise((_, reject) => {
-                setTimeout(() => {
-                    newArrivalsAbortController.abort();
-                    reject(new Error('Request timeout'));
-                }, timeout);
-            });
-
-            // Race between fetch and timeout
-            Promise.race([
-                fetch('/api/products/new-arrivals', {
-                    headers: {
-                        'X-Requested-With': 'XMLHttpRequest',
-                        'Accept': 'application/json',
-                        'Content-Type': 'application/json'
-                    },
-                    signal: newArrivalsAbortController.signal
-                }),
-                timeoutPromise
-            ])
-                .then(response => {
-                    if (!response.ok) {
-                        throw new Error(`HTTP ${response.status}: ${response.statusText}`);
-                    }
-                    return response.json();
-                })
-                .then(data => {
-                    const endTime = performance.now();
-                    const loadTime = Math.round(endTime - startTime);
-
-                    const products = data.success ? data.data : data;
-
-                    if (!Array.isArray(products) || products.length === 0) {
-                        if (fallback) {
-                            fallback.innerHTML = '<div class="col-12 text-center text-muted"><i class="fas fa-box-open fa-2x mb-3"></i><p>No new arrival products found.</p></div>';
-                            fallback.style.display = 'block';
-                        }
-                        if (wrapper) wrapper.style.display = 'none';
-                        return;
-                    }
-
-                    if (fallback) fallback.style.display = 'none';
-
-                    // Show skeleton loaders in carousel while rendering
-                    const perPageCalc = window.innerWidth >= 1200 ? 4 : window.innerWidth >= 992 ? 3 : 2;
-                    listEl.innerHTML = Array.from({ length: perPageCalc }, () => `
-                <li class="splide__slide">
-                    <div class="product-skeleton">
-                        <div class="skeleton-image"></div>
-                        <div class="skeleton-wishlist"></div>
-                        <div class="skeleton-content">
-                            <div class="skeleton-title"></div>
-                            <div class="skeleton-title"></div>
-                            <div class="skeleton-price"></div>
-                            <div class="skeleton-button"></div>
-                        </div>
-                    </div>
-                </li>
-            `).join('');
-
-                    // Render actual products immediately
-                    listEl.innerHTML = products.map(product => {
-                        try {
-                            const rating = product.avg_rating ?? product.rating ?? 0;
-                            const reviews = product.total_reviews ?? 0;
-                            const price = Number(product.price || 0);
-                            const discount = Number(product.discount || 0);
-                            const finalPrice = discount > 0 ? discount : price;
-                            const image = product.image || '/static/default-product.jpg';
-                            const hasStock = product.has_stock !== false;
-                            const isWishlisted = product.is_wishlisted === true;
-
-                            return `
-                        <li class="splide__slide">
-                            <div class="product-card position-relative no-hover-border" data-href="/product/${product.slug}" data-gtm-id="${product.id}" data-gtm-name="${product.name}" data-gtm-price="${finalPrice}" data-gtm-category="${product.category_name || product.category || ''}">
-                                ${discount > 0 && discount < price ? `<div class="product-discount-label">-${Math.round(((price - discount) / price) * 100)}%</div>` : ''}
-                                <button class="product-wishlist-top ${isWishlisted ? ' active' : ''}" data-product-id="${product.id}" title="${isWishlisted ? 'Remove from wishlist' : 'Add to wishlist'}" type="button" onclick="event.stopPropagation();">
-                                    <i class="${isWishlisted ? 'fas' : 'far'} fa-heart"></i>
-                                </button>
-                                <div class="product-image-container">
-                                    <img src="${image}" class="product-image" alt="${product.name}" loading="lazy" onerror="this.onerror=null; this.src='/static/default-product.jpg';">
-                                </div>
-                                <div class="product-info p-3">
-                                    <a href="/product/${product.slug}" style="text-decoration: none; font-weight: 500; color: #374151; display: block; line-height: 1.4;" class="product-title" title="${product.name}">${product.name} ${(product.style_number || product.sku) ? ` <span class="style-number text-muted" style="font-size: 0.85em; font-weight: 400;">(${(product.style_number || product.sku)})</span>` : ''}</a>
-                                    ${discount > 0 && discount < price ? `<div class="save-badge mt-1" style="font-size: 9px; padding: 2px 6px;">Save ৳ ${(price - discount).toLocaleString()}</div>` : ''}
-                                    <div class="d-flex justify-content-between align-items-center mt-1">
-                                        <div class="price-container">
-                                            <div class="product-price-current fw-bold" style="color: #1a1a1a; font-size: 1.1rem;">৳ ${finalPrice.toLocaleString()}</div>
-                                            ${discount > 0 && discount < price ? `
-                                                <div class="d-flex align-items-center gap-2">
-                                                    <span class="product-price-old text-muted text-decoration-line-through" style="font-size: 0.8rem;">৳ ${price.toLocaleString()}</span>
-                                                    <span class="product-discount-text" style="color: #ef4444; font-size: 0.8rem; font-weight: 600;">-${Math.round(((price - discount) / price) * 100)}%</span>
-                                                </div>
-                                            ` : ''}
-                                        </div>
-                                        <a href="/product/${product.slug}" class="floating-cart-btn" onclick="event.stopPropagation();" title="Add to Cart">
-                                            <i class="fas fa-shopping-cart"></i>
-                                        </a>
-                                    </div>
-                                </div>
-                            </div>
-                        </li>`;
-                        } catch (error) {
-                            console.error('Error rendering new arrival product:', product, error);
-                            return '';
-                        }
-                    }).filter(html => html).join('');
-
-                    // If we have fewer products than perPage, duplicate them to enable looping
-                    if (products.length > 0 && products.length < perPageCalc * 2) {
-                        const originalHtml = listEl.innerHTML;
-                        const timesToRepeat = Math.ceil((perPageCalc * 2) / products.length);
-                        listEl.innerHTML = originalHtml.repeat(timesToRepeat);
-                    }
-
-                    wrapper.style.visibility = 'visible';
-                    requestAnimationFrame(() => {
-                        const actualSlideCount = listEl.querySelectorAll('.splide__slide').length;
-                        const perPage = window.innerWidth >= 1200 ? 4 : window.innerWidth >= 992 ? 3 : 2;
-                        const canLoop = actualSlideCount >= perPage * 2;
-
-                        console.log('New Arrivals - Original Products:', products.length, 'Total Slides:', actualSlideCount, 'PerPage:', perPage, 'CanLoop:', canLoop);
-
-                        const naSplide = new Splide(wrapper, {
-                            type: 'loop',
-                            perPage: perPage,
-                            gap: '16px',
-                            pagination: false,
-                            arrows: true,
-                            autoplay: canLoop,
-                            interval: 2500,
-                            pauseOnHover: true,
-                            rewind: true,
-                            breakpoints: {
-                                1199: { perPage: 3 },
-                                991: { perPage: 2 },
-                                575: { perPage: 2 }
-                            }
-                        });
-                        naSplide.mount();
-
-                        // Force autoplay if we have enough slides
-                        if (canLoop && naSplide.Components && naSplide.Components.Autoplay) {
-                            naSplide.Components.Autoplay.play();
-                            console.log('New Arrivals autoplay enabled and started');
-                        }
-                    });
-
-                    console.log(`New arrivals loaded in ${loadTime}ms`, { count: products.length });
-                })
-                .catch(error => {
-                    console.error('Failed to load new arrivals:', error);
-
-                    // Don't retry if request was aborted manually
-                    if (error.name === 'AbortError' && !error.message.includes('timeout')) {
-                        return;
-                    }
-
-                    // Auto-retry for transient errors (network, timeout, server errors, connection reset)
-                    const isRetryableError =
-                        error.message.includes('Network') ||
-                        error.message.includes('Failed to fetch') ||
-                        error.message.includes('timeout') ||
-                        error.message.includes('Request timeout') ||
-                        error.message.includes('ERR_CONNECTION_RESET') ||
-                        error.message.includes('connection') ||
-                        (error.response && [500, 502, 503, 504, 0].includes(error.response.status));
-
-                    if (retryCount < maxRetries && isRetryableError) {
-                        console.log(`Retrying new arrivals (attempt ${retryCount + 1}/${maxRetries})...`);
-                        setTimeout(() => {
-                            loadNewArrivals(retryCount + 1);
-                        }, 1000 * (retryCount + 1)); // Exponential backoff: 1s, 2s, 3s
-                        return;
-                    }
-
-                    if (fallback) {
-                        fallback.innerHTML = `
-                    <div class="col-12 text-center text-danger">
-                        <i class="fas fa-exclamation-triangle fa-2x mb-3"></i>
-                        <p>Failed to load new arrival products.</p>
-                        <button class="btn btn-outline-primary btn-sm" onclick="window.loadNewArrivalsProducts && window.loadNewArrivalsProducts()">
-                            <i class="fas fa-refresh me-1"></i>Retry
-                        </button>
-                    </div>
-                `;
-                        fallback.style.display = 'block';
-                    }
-                    if (wrapper) wrapper.style.display = 'none';
-                });
-        }; // Close loadNewArrivals function
-
-        // Make loadNewArrivals available globally for retry button
-        window.loadNewArrivalsProducts = function () {
-            loadNewArrivals(0);
-        };
-
-        // Initial load
-        loadNewArrivals(0);
-    })();
-
-    // Build Best Deals Splide from API (like Top Selling)
-    (function initBestDealsSplide() {
-        const wrapper = document.getElementById('bestDealsSplide');
-        const listEl = document.getElementById('bestDealsSplideList');
-        const fallback = document.getElementById('bestDealsFallback');
-
-        if (!wrapper || !listEl) return;
-
-        // Retry function that can be called from retry button
-        let bestDealsAbortController = null;
-        const loadBestDeals = function (retryCount = 0) {
-            const maxRetries = 3; // Increased retries
-
-            // Cancel any previous request
-            if (bestDealsAbortController) {
-                bestDealsAbortController.abort();
-            }
-            bestDealsAbortController = new AbortController();
-
-            // Add loading state with skeleton loaders
-            if (fallback) {
-                const perPage = window.innerWidth >= 1200 ? 4 : window.innerWidth >= 992 ? 3 : 2;
-                const colClass = perPage === 4 ? 'col-3' : perPage === 3 ? 'col-4' : 'col-6';
-                const skeletonHTML = Array.from({ length: perPage }, () => `
-                    <div class="${colClass}">
-                        <div class="product-skeleton">
-                            <div class="skeleton-image"></div>
-                            <div class="skeleton-wishlist"></div>
-                            <div class="skeleton-content">
-                                <div class="skeleton-title"></div>
-                                <div class="skeleton-title"></div>
-                                <div class="skeleton-price"></div>
-                                <div class="skeleton-button"></div>
-                            </div>
-                        </div>
-                    </div>
-                `).join('');
-                fallback.innerHTML = skeletonHTML;
-                fallback.style.display = 'flex';
-                fallback.style.flexWrap = 'wrap';
-            }
-
-            const startTime = performance.now();
-            const timeout = 30000; // 30 second timeout (increased for big data on live server)
-
-            // Create timeout promise
-            const timeoutPromise = new Promise((_, reject) => {
-                setTimeout(() => {
-                    bestDealsAbortController.abort();
-                    reject(new Error('Request timeout'));
-                }, timeout);
-            });
-
-            // Race between fetch and timeout
-            Promise.race([
-                fetch('/api/products/best-deals', {
-                    headers: {
-                        'X-Requested-With': 'XMLHttpRequest',
-                        'Accept': 'application/json',
-                        'Content-Type': 'application/json'
-                    },
-                    signal: bestDealsAbortController.signal
-                }),
-                timeoutPromise
-            ])
-                .then(response => {
-                    if (!response.ok) {
-                        throw new Error(`HTTP ${response.status}: ${response.statusText}`);
-                    }
-                    return response.json();
-                })
-                .then(data => {
-                    const endTime = performance.now();
-                    const loadTime = Math.round(endTime - startTime);
-
-                    // Handle API response format
-                    const products = data.success ? data.data : data;
-
-                    if (!Array.isArray(products) || products.length === 0) {
-                        if (fallback) {
-                            fallback.innerHTML = '<div class="col-12 text-center text-muted"><i class="fas fa-box-open fa-2x mb-3"></i><p>No best deals found.</p></div>';
-                            fallback.style.display = 'block';
-                        }
-                        if (wrapper) wrapper.style.display = 'none';
-                        return;
-                    }
-
-                    if (fallback) fallback.style.display = 'none';
-
-                    // Show skeleton loaders in carousel while rendering
-                    const perPageCalc = window.innerWidth >= 1200 ? 4 : window.innerWidth >= 992 ? 3 : 2;
-                    listEl.innerHTML = Array.from({ length: perPageCalc }, () => `
-                <li class="splide__slide">
-                    <div class="product-skeleton">
-                        <div class="skeleton-image"></div>
-                        <div class="skeleton-wishlist"></div>
-                        <div class="skeleton-content">
-                            <div class="skeleton-title"></div>
-                            <div class="skeleton-title"></div>
-                            <div class="skeleton-price"></div>
-                            <div class="skeleton-button"></div>
-                        </div>
-                    </div>
-                </li>
-            `).join('');
-
-                    // Render actual products immediately
-                    listEl.innerHTML = products.map(product => {
-                        try {
-                            const rating = product.avg_rating ?? 0;
-                            const reviews = product.total_reviews ?? 0;
-                            const price = Number(product.price || 0);
-                            const discount = Number(product.discount || 0);
-                            const finalPrice = discount > 0 ? discount : price;
-                            const image = product.image || '/static/default-product.jpg';
-                            const hasStock = product.has_stock !== false;
-                            const isWishlisted = product.is_wishlisted === true;
-
-                            return `
-                        <li class="splide__slide">
-                            <div class="product-card position-relative no-hover-border" data-href="/product/${product.slug}" data-gtm-id="${product.id}" data-gtm-name="${product.name}" data-gtm-price="${finalPrice}" data-gtm-category="${product.category_name || product.category || ''}">
-                                ${discount > 0 && discount < price ? `<div class="product-discount-label">-${Math.round(((price - discount) / price) * 100)}%</div>` : ''}
-                                <button class="product-wishlist-top ${isWishlisted ? ' active' : ''}" data-product-id="${product.id}" title="${isWishlisted ? 'Remove from wishlist' : 'Add to wishlist'}" type="button" onclick="event.stopPropagation();">
-                                    <i class="${isWishlisted ? 'fas' : 'far'} fa-heart"></i>
-                                </button>
-                                <div class="product-image-container">
-                                    <img src="${image}" class="product-image" alt="${product.name}" loading="lazy" onerror="this.onerror=null; this.src='/static/default-product.jpg';">
-                                </div>
-                                <div class="product-info p-3">
-                                    <a href="/product/${product.slug}" style="text-decoration: none; font-weight: 500; color: #374151; display: block; line-height: 1.4;" class="product-title" title="${product.name}">${product.name} ${(product.style_number || product.sku) ? ` <span class="style-number text-muted" style="font-size: 0.85em; font-weight: 400;">(${(product.style_number || product.sku)})</span>` : ''}</a>
-                                    ${discount > 0 && discount < price ? `<div class="save-badge mt-1" style="font-size: 9px; padding: 2px 6px;">Save ৳ ${(price - discount).toLocaleString()}</div>` : ''}
-                                    <div class="d-flex justify-content-between align-items-center mt-1">
-                                        <div class="price-container">
-                                            <div class="product-price-current fw-bold" style="color: #1a1a1a; font-size: 1.1rem;">৳ ${finalPrice.toLocaleString()}</div>
-                                            ${discount > 0 && discount < price ? `
-                                                <div class="d-flex align-items-center gap-2">
-                                                    <span class="product-price-old text-muted text-decoration-line-through" style="font-size: 0.8rem;">৳ ${price.toLocaleString()}</span>
-                                                    <span class="product-discount-text" style="color: #ef4444; font-size: 0.8rem; font-weight: 600;">-${Math.round(((price - discount) / price) * 100)}%</span>
-                                                </div>
-                                            ` : ''}
-                                        </div>
-                                        <a href="/product/${product.slug}" class="floating-cart-btn" onclick="event.stopPropagation();" title="Add to Cart">
-                                            <i class="fas fa-shopping-cart"></i>
-                                        </a>
-                                    </div>
-                                </div>
-                            </div>
-                        </li>`;
-                        } catch (error) {
-                            console.error('Error rendering best deal product:', product, error);
-                            return '';
-                        }
-                    }).filter(html => html).join('');
-
-                    // If we have fewer products than perPage, duplicate them to enable looping
-                    if (products.length > 0 && products.length < perPageCalc * 2) {
-                        const originalHtml = listEl.innerHTML;
-                        const timesToRepeat = Math.ceil((perPageCalc * 2) / products.length);
-                        listEl.innerHTML = originalHtml.repeat(timesToRepeat);
-                    }
-
-                    // Initialize Splide carousel
-                    wrapper.style.visibility = 'visible';
-                    requestAnimationFrame(() => {
-                        const actualSlideCount = listEl.querySelectorAll('.splide__slide').length;
-                        const perPage = window.innerWidth >= 1200 ? 4 : window.innerWidth >= 992 ? 3 : 2;
-                        const canLoop = actualSlideCount >= perPage * 2;
-
-                        console.log('Best Deals - Original Products:', products.length, 'Total Slides:', actualSlideCount, 'PerPage:', perPage, 'CanLoop:', canLoop);
-
-                        const dealsSplide = new Splide(wrapper, {
-                            type: 'loop',
-                            perPage: perPage,
-                            gap: '16px',
-                            pagination: false,
-                            arrows: true,
-                            drag: true,
-                            autoplay: canLoop,
-                            interval: 4500,
-                            pauseOnHover: true,
-                            rewind: true,
-                            breakpoints: {
-                                1199: { perPage: 3 },
-                                991: { perPage: 2 },
-                                575: { perPage: 2 }
-                            }
-                        });
-                        dealsSplide.mount();
-
-                        // Force autoplay if we have enough slides
-                        if (canLoop && dealsSplide.Components && dealsSplide.Components.Autoplay) {
-                            dealsSplide.Components.Autoplay.play();
-                            console.log('Best Deals autoplay enabled and started');
-                        }
-                    });
-
-                    console.log(`Best deals loaded in ${loadTime}ms`, { count: products.length });
-                })
-                .catch(error => {
-                    console.error('Failed to load best deals:', error);
-
-                    // Don't retry if request was aborted manually
-                    if (error.name === 'AbortError' && !error.message.includes('timeout')) {
-                        return;
-                    }
-
-                    // Auto-retry for transient errors (network, timeout, server errors, connection reset)
-                    const isRetryableError =
-                        error.message.includes('Network') ||
-                        error.message.includes('Failed to fetch') ||
-                        error.message.includes('timeout') ||
-                        error.message.includes('Request timeout') ||
-                        error.message.includes('ERR_CONNECTION_RESET') ||
-                        error.message.includes('connection') ||
-                        (error.response && [500, 502, 503, 504, 0].includes(error.response.status));
-
-                    if (retryCount < maxRetries && isRetryableError) {
-                        console.log(`Retrying best deals (attempt ${retryCount + 1}/${maxRetries})...`);
-                        setTimeout(() => {
-                            loadBestDeals(retryCount + 1);
-                        }, 1000 * (retryCount + 1)); // Exponential backoff: 1s, 2s, 3s
-                        return;
-                    }
-
-                    if (fallback) {
-                        fallback.innerHTML = `
-                    <div class="col-12 text-center text-danger">
-                        <i class="fas fa-exclamation-triangle fa-2x mb-3"></i>
-                        <p>Failed to load best deals.</p>
-                        <button class="btn btn-outline-primary btn-sm" onclick="window.loadBestDealsProducts && window.loadBestDealsProducts()">
-                            <i class="fas fa-refresh me-1"></i>Retry
-                        </button>
-                    </div>
-                `;
-                        fallback.style.display = 'block';
-                    }
-                    if (wrapper) wrapper.style.display = 'none';
-                });
-        }; // Close loadBestDeals function
-
-        // Make loadBestDeals available globally for retry button
-        window.loadBestDealsProducts = function () {
-            loadBestDeals(0);
-        };
-
-        // Initial load
-        loadBestDeals(0);
-    })();
-
-    // Init Hero Splide - optimized to prevent shake
-    try {
-        const heroEl = document.getElementById('heroSplide');
-        if (heroEl && !heroEl.__splideMounted) {
-            // Pre-calculate arrows to prevent layout shift
-            const shouldShowArrows = window.innerWidth > 768;
-
-            const hero = new Splide(heroEl, {
-                type: 'loop',
-                autoplay: true,
-                interval: 5000,
-                pauseOnHover: true,
-                arrows: shouldShowArrows,
-                pagination: true,
-                drag: true,
-                rewind: true,
-                // Disable transitions that could cause shake
-                speed: 400,
-                easing: 'ease',
-                breakpoints: {
-                    768: {
-                        arrows: false
-                    }
-                }
-            });
-            hero.mount();
-            heroEl.__splideMounted = true;
-        }
-    } catch (e) { console.error('Failed to mount hero Splide:', e); }
-
-    const carousel = document.getElementById('homeHeroCarousel');
-    // old markup removed; keep code for backward compatibility on other pages
-
-    if (!carousel) return; // Exit if carousel element doesn't exist
-
-    const items = carousel.querySelectorAll('.carousel-item');
-    const indicators = carousel.querySelectorAll('.carousel-indicators button');
-    const prevBtn = carousel.querySelector('.carousel-control-prev');
-    const nextBtn = carousel.querySelector('.carousel-control-next');
-
-    if (items.length === 0) return;
-
-    let currentIndex = 0;
-    let autoPlayInterval = null;
-    let isHovering = false;
-
-    // Show specific slide
-    function showSlide(index) {
-        items.forEach(item => item.classList.remove('active'));
-        indicators.forEach(ind => ind.classList.remove('active'));
-
-        currentIndex = (index + items.length) % items.length;
-        items[currentIndex].classList.add('active');
-        if (indicators[currentIndex]) {
-            indicators[currentIndex].classList.add('active');
-        }
-    }
-
-    // Next slide
-    function nextSlide() {
-        showSlide(currentIndex + 1);
-    }
-
-    // Previous slide
-    function prevSlide() {
-        showSlide(currentIndex - 1);
-    }
-
-    // Auto-play
-    function startAutoPlay() {
-        autoPlayInterval = setInterval(() => {
-            if (!isHovering) nextSlide();
-        }, 5000);
-    }
-
-    function stopAutoPlay() {
-        if (autoPlayInterval) {
-            clearInterval(autoPlayInterval);
-            autoPlayInterval = null;
-        }
-    }
-
-    // Event listeners for controls
-    if (prevBtn) {
-        prevBtn.addEventListener('click', (e) => {
-            e.preventDefault();
-            e.stopPropagation();
-            prevSlide();
-            stopAutoPlay();
-            startAutoPlay();
-        });
-    }
-
-    if (nextBtn) {
-        nextBtn.addEventListener('click', (e) => {
-            e.preventDefault();
-            e.stopPropagation();
-            nextSlide();
-            stopAutoPlay();
-            startAutoPlay();
-        });
-    }
-
-    // Indicator clicks
-    indicators.forEach((indicator, index) => {
-        indicator.addEventListener('click', (e) => {
-            e.preventDefault();
-            showSlide(index);
-            stopAutoPlay();
-            startAutoPlay();
-        });
-    });
-
-    // Hover pause
-    carousel.addEventListener('mouseenter', () => {
-        isHovering = true;
-    });
-
-    carousel.addEventListener('mouseleave', () => {
-        isHovering = false;
-    });
-
-    // Keyboard navigation
-    document.addEventListener('keydown', (e) => {
-        if (e.key === 'ArrowLeft') prevSlide();
-        if (e.key === 'ArrowRight') nextSlide();
-    });
-
-    // Mouse drag support with better detection (supports dragging on links)
-    let isDown = false;
-    let startX = 0;
-    let currentX = 0;
-    let isDragging = false;
-    let didDrag = false;
-
-    carousel.addEventListener('mousedown', (e) => {
-        // Allow drag on everything, including anchors; we'll suppress click later if it was a drag
-        isDown = true;
-        startX = e.pageX - carousel.offsetLeft;
-        carousel.style.cursor = 'grabbing';
-        isDragging = false;
-        didDrag = false;
-    });
-
-    carousel.addEventListener('mousemove', (e) => {
-        if (!isDown) return;
-        e.preventDefault();
-        currentX = e.pageX - carousel.offsetLeft;
-        const walk = currentX - startX;
-
-        if (Math.abs(walk) > 5) {
-            isDragging = true;
-            didDrag = true;
-        }
-    });
-
-    carousel.addEventListener('mouseup', (e) => {
-        if (!isDown) return;
-
-        const deltaX = currentX - startX;
-        isDown = false;
-        carousel.style.cursor = 'grab';
-
-        // Only change slide if dragged enough distance
-        if (isDragging && Math.abs(deltaX) > 50) {
-            if (deltaX < 0) {
-                nextSlide();
-            } else {
-                prevSlide();
-            }
-            stopAutoPlay();
-            startAutoPlay();
-        }
-
-        isDragging = false;
-    });
-
-    carousel.addEventListener('mouseleave', () => {
-        if (isDown) {
-            isDown = false;
-            carousel.style.cursor = 'grab';
-        }
-    });
-
-    // Prevent text selection while dragging
-    carousel.addEventListener('dragstart', (e) => {
-        e.preventDefault();
-    });
-
-    // Suppress anchor navigation if a drag happened, but ignore clicks on controls
-    carousel.addEventListener('click', (e) => {
-        if (!didDrag) return;
-        if (e.target.closest('.carousel-control-prev') || e.target.closest('.carousel-control-next')) {
-            didDrag = false; return;
-        }
-        const anchor = e.target.closest('a');
-        if (anchor) {
-            e.preventDefault();
-            e.stopPropagation();
-        }
-        didDrag = false;
-    }, true);
-
-    // Touch support for mobile
-    let touchStartX = 0;
-    let touchEndX = 0;
-
-    carousel.addEventListener('touchstart', (e) => {
-        touchStartX = e.changedTouches[0].screenX;
-    });
-
-    carousel.addEventListener('touchend', (e) => {
-        touchEndX = e.changedTouches[0].screenX;
-        handleSwipe();
-    });
-
-    function handleSwipe() {
-        if (touchEndX < touchStartX - 50) {
-            nextSlide();
-            stopAutoPlay();
-            startAutoPlay();
-        }
-        if (touchEndX > touchStartX + 50) {
-            prevSlide();
-            stopAutoPlay();
-            startAutoPlay();
-        }
-    }
-
-    // Initialize safely (avoid duplicate mounts)
-    if (!carousel.dataset.initialized) {
-        carousel.dataset.initialized = 'true';
-        showSlide(0);
-        startAutoPlay();
-        carousel.style.cursor = 'grab';
     }
 });

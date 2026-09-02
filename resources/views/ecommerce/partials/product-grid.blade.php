@@ -1,72 +1,141 @@
 @if($products->count() > 0)
-    @foreach($products as $product)
-        <div class="col-lg-3 col-md-6 col-6 mt-0 mb-3 mb-md-4">
-            <div class="product-card position-relative" 
-                data-href="{{ route('product.details', $product->slug) }}">
+    <div class="grid grid-cols-2 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-3 xl:grid-cols-4 gap-3 sm:gap-5" id="productsGridList">
+        @foreach($products as $product)
+            @php
+                $effectivePrice = $product->effective_price;
+                $originalPrice = (float)$product->price;
+                $hasDiscount = $effectivePrice < $originalPrice;
+                $discountPercent = $originalPrice > 0 && $hasDiscount ? round((($originalPrice - $effectivePrice) / $originalPrice) * 100) : 0;
+                $categoryName = $product->category->name ?? 'Beauty';
+                $productImage = $product->image ? asset($product->image) : asset('static/default-product.jpg');
+            @endphp
+            <div class="group relative bg-white border border-stone-200/60 rounded-sm overflow-hidden flex flex-col items-center text-center p-2.5 sm:p-3 transition-all duration-300 hover:shadow-xl">
                 
-                @php
-                    $effectivePrice = $product->effective_price;
-                    $originalPrice = $product->original_price;
-                    $hasDiscount = $product->hasDiscount() && $effectivePrice < $originalPrice;
-                @endphp
-
-                <div class="product-card-image">
-                    <img src="{{$product->image ? asset($product->image) : asset('static/default-product.jpg')}}"
-                        alt="{{ $product->name }}"
-                        loading="lazy">
+                <!-- Product Image Stage -->
+                <div class="relative w-full aspect-[4/5] overflow-hidden bg-stone-50 mb-2.5 group/img">
+                    <!-- Black NEW Tag -->
+                    <span class="absolute top-0 left-0 bg-[#222222] text-white text-[10px] font-bold px-2.5 py-0.5 rounded-none uppercase tracking-wider z-10">NEW</span>
                     
-                    <button class="product-wishlist-top {{$product->is_wishlisted ? ' active' : ''}}"
-                        data-product-id="{{ $product->id }}"
-                        onclick="event.stopPropagation(); toggleWishlist({{ $product->id }});"
-                        style="position: absolute; top: 12px; right: 12px; z-index: 10; border: none; background: transparent; color: #9ca3af; transition: all 0.3s;">
-                        <i class="{{ $product->is_wishlisted ? 'fas text-danger' : 'far' }} fa-heart" style="font-size: 1.1rem;"></i>
+                    <!-- Discount Tag -->
+                    @if($discountPercent > 0)
+                        <span class="absolute top-0 right-0 bg-[#222222] text-white text-[10px] font-bold px-2 py-0.5 rounded-none uppercase tracking-wider z-10">-{{ $discountPercent }}%</span>
+                    @endif
+
+                    <!-- Product Image -->
+                    <a href="{{ route('product.details', $product->slug) }}" class="block w-full h-full">
+                        <img src="{{ $productImage }}" class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500 block" alt="{{ $product->name }}" loading="lazy" onerror="this.onerror=null; this.src='/static/default-product.jpg';">
+                    </a>
+
+                    <!-- Mobile 1-Tap Quick Add Button -->
+                    <button type="button" 
+                            class="md:hidden absolute bottom-2 right-2 w-8 h-8 rounded-full bg-[#a28e46] active:bg-[#8e7b39] text-white shadow-md flex items-center justify-center text-xs z-20 cursor-pointer focus:outline-none transition-transform active:scale-95"
+                            onclick="event.stopPropagation(); handleQuickAddToCart({{ $product->id }}, {{ $product->has_variations ? 'true' : 'false' }}, '{{ $product->slug }}');"
+                            aria-label="Add to cart">
+                        <i class="fa-solid fa-bag-shopping text-[11px]"></i>
                     </button>
 
-                    <button class="floating-cart-btn" 
-                            title="Select Options"
-                            onclick="event.stopPropagation(); window.location.href='{{ route('product.details', $product->slug) }}'"
-                            style="z-index: 11; position: relative;">
-                        <i class="fas fa-shopping-basket"></i>
-                    </button>
-                </div>
-
-                <div class="product-card-info">
-                    <h3 class="product-title">
-                        @php $displayCode = $product->style_number ?? $product->sku; @endphp
-                        <a href="{{ route('product.details', $product->slug) }}" class="stretched-link" style="text-decoration: none; color: inherit;">
-                            {{ $product->name }} @if($displayCode) <span class="style-number text-muted" style="font-size: 0.85em; font-weight: 400;">({{ $displayCode }})</span> @endif
-                        </a>
-                    </h3>
-                    <div class="product-card-price">
-                        <span class="current">TK. {{ number_format($effectivePrice, 0) }}</span>
-                        @if($hasDiscount)
-                            <span class="original">TK. {{ number_format($originalPrice, 0) }}</span>
-                        @endif
+                    <!-- Desktop Hover Quick Add Bar -->
+                    <div class="hidden md:flex absolute inset-x-0 bottom-0 p-2.5 bg-gradient-to-t from-black/70 via-black/30 to-transparent translate-y-full group-hover/img:translate-y-0 transition-transform duration-300 items-center justify-center z-20">
+                        <button type="button" 
+                                class="w-full bg-[#a28e46] hover:bg-[#8e7b39] text-white font-bold text-[11px] uppercase tracking-wider py-2 px-3 rounded-none shadow-md transition-all flex items-center justify-center gap-1.5 cursor-pointer focus:outline-none"
+                                onclick="event.stopPropagation(); handleQuickAddToCart({{ $product->id }}, {{ $product->has_variations ? 'true' : 'false' }}, '{{ $product->slug }}');">
+                            <i class="fa-solid fa-cart-shopping text-[10px]"></i>
+                            <span>ADD TO CART</span>
+                        </button>
                     </div>
                 </div>
-            </div>
-        </div>
-    @endforeach
-@else
-    <div class="col-12">
-        <div class="no-products-container">
-            <div class="no-products-icon">
-                <i class="fas fa-search"></i>
-            </div>
-            <h3 class="no-products-title">No Products Found</h3>
-            <p class="no-products-message">We couldn't find any products matching your current filters.</p>
-            <div class="no-products-suggestion">
-                <i class="fas fa-lightbulb"></i>
-                <span>Try adjusting your filters to see more products</span>
-            </div>
-        </div>
-    </div>
-@endif
 
-@if($products->hasPages() && !isset($hidePagination))
-    <div class="col-12">
-        <div class="d-flex justify-content-center mt-4">
-            {{ $products->links('vendor.pagination.bootstrap-5') }}
+                <!-- Product Details -->
+                <div class="w-full flex flex-col items-center text-center">
+                    <!-- Category Tag -->
+                    <div class="text-[11px] text-stone-400 flex items-center justify-center gap-1 mb-1 font-medium">
+                        <i class="fa-solid fa-tag text-[9px] text-stone-400"></i>
+                        <span class="truncate max-w-[140px]">{{ $categoryName }}</span>
+                    </div>
+
+                    <!-- Title -->
+                    <a href="{{ route('product.details', $product->slug) }}" class="font-serif text-xs md:text-sm font-bold text-stone-900 hover:text-[#a28e46] uppercase tracking-wider text-center block leading-tight line-clamp-1 no-underline transition-colors mb-1.5 w-full" title="{{ $product->name }}">
+                        {{ $product->name }}
+                    </a>
+
+                    <!-- Pricing -->
+                    <div class="flex items-center justify-center gap-2 font-bold text-xs md:text-sm">
+                        @if($hasDiscount)
+                            <span class="text-stone-400 line-through text-xs font-normal">৳ {{ number_format($originalPrice) }}</span>
+                        @endif
+                        <span class="text-[#a28e46]">৳ {{ number_format($effectivePrice) }}</span>
+                    </div>
+                </div>
+
+            </div>
+        @endforeach
+    </div>
+
+    <!-- AJAX Luxury Pagination Controls -->
+    @if(empty($hidePagination))
+        <div class="pt-10 pb-4 flex justify-center items-center" id="pdPaginationWrapper">
+            <nav class="inline-flex items-center gap-1.5 bg-white p-1.5 rounded-sm border border-stone-200 shadow-sm" aria-label="Pagination Navigation">
+                
+                {{-- Previous Page Button --}}
+                @if ($products->onFirstPage())
+                    <span class="px-3 py-1.5 flex items-center gap-1.5 text-stone-300 text-xs font-semibold rounded pointer-events-none select-none">
+                        <i class="fa-solid fa-arrow-left text-[10px]"></i>
+                        <span class="hidden sm:inline">Prev</span>
+                    </span>
+                @else
+                    <a href="{{ $products->previousPageUrl() }}" 
+                       onclick="handleShopPagination(event, this.href)" 
+                       class="px-3 py-1.5 flex items-center gap-1.5 text-stone-700 hover:text-[#a28e46] hover:bg-stone-50 text-xs font-bold rounded transition-colors no-underline cursor-pointer">
+                        <i class="fa-solid fa-arrow-left text-[10px]"></i>
+                        <span class="hidden sm:inline">Prev</span>
+                    </a>
+                @endif
+
+                {{-- Page Numbers --}}
+                <div class="flex items-center gap-1 px-1 border-x border-stone-100">
+                    @foreach ($products->getUrlRange(1, max(1, $products->lastPage())) as $page => $url)
+                        @if ($page == $products->currentPage())
+                            <span class="w-8 h-8 flex items-center justify-center bg-[#a28e46] text-white font-bold text-xs rounded shadow-sm">
+                                {{ $page }}
+                            </span>
+                        @else
+                            <a href="{{ $url }}" 
+                               onclick="handleShopPagination(event, this.href)" 
+                               class="w-8 h-8 flex items-center justify-center text-stone-600 hover:bg-stone-100 font-semibold text-xs rounded transition-colors no-underline cursor-pointer">
+                                {{ $page }}
+                            </a>
+                        @endif
+                    @endforeach
+                </div>
+
+                {{-- Next Page Button --}}
+                @if ($products->hasMorePages())
+                    <a href="{{ $products->nextPageUrl() }}" 
+                       onclick="handleShopPagination(event, this.href)" 
+                       class="px-3 py-1.5 flex items-center gap-1.5 text-stone-700 hover:text-[#a28e46] hover:bg-stone-50 text-xs font-bold rounded transition-colors no-underline cursor-pointer">
+                        <span class="hidden sm:inline">Next</span>
+                        <i class="fa-solid fa-arrow-right text-[10px]"></i>
+                    </a>
+                @else
+                    <span class="px-3 py-1.5 flex items-center gap-1.5 text-stone-300 text-xs font-semibold rounded pointer-events-none select-none">
+                        <span class="hidden sm:inline">Next</span>
+                        <i class="fa-solid fa-arrow-right text-[10px]"></i>
+                    </span>
+                @endif
+
+            </nav>
         </div>
+    @endif
+@else
+    <!-- No Products Found State -->
+    <div class="py-16 px-4 text-center bg-white rounded border border-stone-200/80 shadow-sm flex flex-col items-center justify-center">
+        <div class="w-16 h-16 rounded-full bg-stone-100 text-[#a28e46] flex items-center justify-center text-2xl mb-4">
+            <i class="fa-solid fa-magnifying-glass"></i>
+        </div>
+        <h3 class="font-serif font-bold text-lg text-stone-800 uppercase tracking-wide mb-1">No Products Found</h3>
+        <p class="text-xs text-stone-500 max-w-sm mb-5">We couldn't find any items matching your selected criteria. Try adjusting your filters or search keywords.</p>
+        <button type="button" onclick="clearAllShopFilters()" class="bg-[#a28e46] hover:bg-[#8e7b39] text-white font-bold text-xs uppercase tracking-widest px-6 py-2.5 rounded shadow-sm transition-colors cursor-pointer">
+            Reset Filters
+        </button>
     </div>
 @endif

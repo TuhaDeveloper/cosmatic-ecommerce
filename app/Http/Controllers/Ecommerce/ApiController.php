@@ -788,4 +788,106 @@ class ApiController extends Controller
             ], 200); // Return 200 with empty data instead of 500
         }
     }
+
+    public function getQuickVariation($id)
+    {
+        try {
+            $product = \App\Models\Product::published()
+                ->with([
+                    'category',
+                    'variations.combinations.attribute',
+                    'variations.combinations.attributeValue',
+                    'variations.stocks'
+                ])
+                ->find($id);
+
+            if (!$product) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Product not found'
+                ], 404);
+            }
+
+            $effectivePrice = $product->effective_price;
+            $hasDiscount = $effectivePrice < $product->price;
+
+            $attributeGroups = [];
+            $variationsList = [];
+
+            if ($product->has_variations) {
+                foreach ($product->variations as $variation) {
+                    if ($variation->status !== 'active') continue;
+
+                    $comboMap = [];
+                    foreach ($variation->combinations as $combination) {
+                        $attr = $combination->attribute;
+                        $val = $combination->attributeValue;
+                        if (!$attr || !$val) continue;
+
+                        $comboMap[$attr->id] = $val->id;
+
+                        if (!isset($attributeGroups[$attr->id])) {
+                            $attributeGroups[$attr->id] = [
+                                'id' => $attr->id,
+                                'name' => $attr->name,
+                                'values' => []
+                            ];
+                        }
+                        if (!isset($attributeGroups[$attr->id]['values'][$val->id])) {
+                            $attributeGroups[$attr->id]['values'][$val->id] = [
+                                'id' => $val->id,
+                                'label' => $val->value,
+                                'color_code' => $val->color_code,
+                                'image' => $val->image ? asset($val->image) : null,
+                            ];
+                        }
+                    }
+
+                    $vPrice = (float)$variation->price;
+                    $vDiscount = $variation->discount > 0 ? (float)$variation->discount : 0;
+                    $vEffective = $vDiscount > 0 && $vDiscount < $vPrice ? $vDiscount : $vPrice;
+                    $stock = $variation->stocks->sum('quantity');
+
+                    $variationsList[] = [
+                        'id' => $variation->id,
+                        'name' => $variation->name,
+                        'sku' => $variation->sku,
+                        'price' => $vPrice,
+                        'discount' => $vDiscount,
+                        'effective_price' => $vEffective,
+                        'in_stock' => $stock > 0,
+                        'stock' => $stock,
+                        'image' => $variation->image ? asset($variation->image) : null,
+                        'attribute_combinations' => $comboMap
+                    ];
+                }
+            }
+
+            $formattedAttributes = array_values(array_map(function($group) {
+                $group['values'] = array_values($group['values']);
+                return $group;
+            }, $attributeGroups));
+
+            return response()->json([
+                'success' => true,
+                'data' => [
+                    'id' => $product->id,
+                    'name' => $product->name,
+                    'slug' => $product->slug,
+                    'image' => $product->image ? asset($product->image) : asset('static/default-product.jpg'),
+                    'price' => (float)$product->price,
+                    'discount' => (float)$product->discount,
+                    'effective_price' => (float)$effectivePrice,
+                    'category' => $product->category ? $product->category->name : 'Cosmetics',
+                    'has_variations' => (bool)$product->has_variations && count($variationsList) > 0,
+                    'attributes' => $formattedAttributes,
+                    'variations' => $variationsList,
+                    'in_stock' => $product->hasStock(),
+                ]
+            ]);
+        } catch (\Exception $e) {
+            Log::error('Quick variation error:', ['error' => $e->getMessage()]);
+            return response()->json(['success' => false, 'message' => 'Error loading product details'], 500);
+        }
+    }
 }

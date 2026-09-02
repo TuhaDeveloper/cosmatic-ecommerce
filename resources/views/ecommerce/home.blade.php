@@ -1,75 +1,87 @@
 @extends('ecommerce.master')
 
+@if(!empty($banners) && count($banners) > 0 && isset($banners[0]->image_url))
+    @push('head')
+        <link rel="preload" as="image" href="{{ $banners[0]->image_url }}" fetchpriority="high">
+    @endpush
+@endif
+
 @section('main-section')
-    <!-- Home: Full Width Banner Slider -->
-    <section class="home-hero">
-        <div class="container-fluid px-0">
-            <!-- Full Width Banner Slider (admin managed) -->
-            <div id="heroSplide" class="splide splide-hero" aria-label="Hero Banners">
-                <div class="splide__track">
-                    <ul class="splide__list">
-                        @if(!empty($banners) && count($banners) > 0)
-                            @foreach($banners as $banner)
-                            <li class="splide__slide">
-                                @if($banner->link_url)
-                                    <a href="{{ $banner->link_url }}" target="_blank" class="d-block w-100 h-100">
-                                        <img src="{{ $banner->image_url }}" alt="{{ $banner->title }}" class="hero-slide-img">
-                                    </a>
-                                @else
-                                    <img src="{{ $banner->image_url }}" alt="{{ $banner->title }}" class="hero-slide-img">
-                                @endif
-                                @if($banner->title || $banner->description)
-                                <div class="hero-caption d-none d-md-block">
-                                    @if($banner->title)
-                                    <h5>{{ $banner->title }}</h5>
-                                    @endif
-                                    @if($banner->description)
-                                    <p>{{ $banner->description }}</p>
-                                    @endif
-                                    @if($banner->link_url && $banner->link_text)
-                                    <a href="{{ $banner->link_url }}" target="_blank" class="btn btn-primary btn-sm">{{ $banner->link_text }}</a>
-                                    @endif
-                                </div>
-                                @endif
-                            </li>
-                            @endforeach
-                        @else
-                            <li class="splide__slide">
-                                <div class="d-flex align-items-center justify-content-center bg-light w-100" style="min-height: 400px; color: #999;">
-                                    <div class="text-center">
-                                        <i class="fas fa-image fa-3x mb-3"></i>
-                                        <p class="mt-2 fw-medium">No Image Found</p>
+    <!-- 1. Full-Width Hero Banner Slider -->
+    <section class="bg-[#faf9f6] py-2 md:py-6 border-b border-stone-200/60">
+        <div class="container mx-auto px-2 sm:px-4 max-w-7xl">
+            <div class="w-full">
+                <div id="heroSplide" class="splide rounded-sm overflow-hidden shadow-sm bg-white min-h-[180px] sm:min-h-[280px] md:min-h-[440px]" aria-label="Hero Banner">
+                    <div class="splide__track">
+                        <ul class="splide__list">
+                            @if(!empty($banners) && count($banners) > 0)
+                                @foreach($banners as $index => $banner)
+                                    <li class="splide__slide relative w-full bg-stone-100 flex items-center justify-center overflow-hidden">
+                                        @if($banner->link_url)
+                                            <a href="{{ $banner->link_url }}" class="block w-full">
+                                                <img src="{{ $banner->image_url }}" alt="{{ $banner->title ?? 'Hero Banner' }}" class="w-full h-auto max-h-[520px] object-contain sm:object-cover block" @if($index === 0) fetchpriority="high" loading="eager" decoding="sync" @else loading="lazy" @endif>
+                                            </a>
+                                        @else
+                                            <img src="{{ $banner->image_url }}" alt="{{ $banner->title ?? 'Hero Banner' }}" class="w-full h-auto max-h-[520px] object-contain sm:object-cover block" @if($index === 0) fetchpriority="high" loading="eager" decoding="sync" @else loading="lazy" @endif>
+                                        @endif
+                                    </li>
+                                @endforeach
+                            @else
+                                <!-- Default Beauty Hero Slide -->
+                                <li class="splide__slide relative w-full min-h-[180px] sm:min-h-[280px] md:min-h-[440px] bg-[#f5ede3] flex items-center overflow-hidden">
+                                    <div class="absolute inset-0 bg-gradient-to-r from-[#fbf8f3] via-[#f7f0e4] to-transparent z-0"></div>
+                                    <div class="container mx-auto px-4 md:px-12 relative z-10 flex flex-col items-end text-right ml-auto">
+                                        <div class="max-w-md">
+                                            <span class="text-[#a28e46] text-[10px] md:text-sm font-semibold uppercase tracking-widest block mb-1">Cosmetics & Spa</span>
+                                            <h1 class="font-serif text-xl sm:text-3xl md:text-5xl font-bold text-[#a28e46] italic leading-tight mb-1">
+                                                The Body Care
+                                            </h1>
+                                            <h3 class="text-gray-500 font-sans text-xs sm:text-sm md:text-lg font-light tracking-widest uppercase mb-3 sm:mb-6">
+                                                FRUIT FACE PACK
+                                            </h3>
+                                            <a href="{{ route('product.archive') }}" class="inline-flex items-center gap-2 border-2 border-[#a28e46] text-[#a28e46] hover:bg-[#a28e46] hover:text-white font-semibold text-[10px] sm:text-xs tracking-widest uppercase px-4 py-1.5 sm:px-7 sm:py-2.5 rounded-full transition-all duration-300 no-underline">
+                                                SHOP NOW
+                                            </a>
+                                        </div>
                                     </div>
-                                </div>
-                            </li>
-                        @endif
-                    </ul>
+                                </li>
+                            @endif
+                        </ul>
+                    </div>
                 </div>
             </div>
-        </div>  
+        </div>
     </section>
 
-    <!-- Popular Categories (Splide carousel) -->
-    <section class="popular-categories">
-        <div class="container">
-            <div class="section-header section-header--fancy">
-                <h2 class="section-title">CATEGORIES</h2>
-                <a href="{{ route('categories') }}" class="section-see-all">View All</a>
+    <!-- 2. Popular Featured Categories Showcase (Pure White Canvas) -->
+    @if(isset($featuredCategories) && count($featuredCategories) > 0)
+    <section class="py-8 md:py-16 bg-white border-b border-stone-200/50">
+        <div class="container mx-auto px-3 sm:px-4 max-w-7xl">
+            <div class="flex items-center justify-between pb-3.5 mb-6 md:mb-8 border-b border-stone-200/80">
+                <div class="relative">
+                    <h2 class="text-lg md:text-2xl font-serif font-bold text-gray-900 uppercase tracking-wide">
+                        FEATURED CATEGORIES
+                    </h2>
+                    <span class="absolute -bottom-[15px] left-0 w-16 h-[2px] bg-[#a28e46]"></span>
+                </div>
+                <a href="{{ route('categories') }}" class="text-xs font-semibold uppercase tracking-wider text-gray-500 hover:text-[#a28e46] transition-colors no-underline">
+                    View All <i class="fa-solid fa-arrow-right text-[10px] ml-1"></i>
+                </a>
             </div>
 
             <div id="categorySplide" class="splide" aria-label="Category Carousel">
                 <div class="splide__track">
-                    <ul class="splide__list" role="listbox">
+                    <ul class="splide__list">
                         @foreach ($featuredCategories as $category)
-                        <li class="splide__slide" role="option">
-                            <a href="{{ route('product.archive') }}?category={{ $category->slug }}" class="cat-card">
-                                <div class="cat-card__img">
-                                    <img src="{{ asset($category->image) }}" alt="{{ $category->name }}">
-                                    <div class="cat-card__overlay"></div>
-                                </div>
-                                <div class="cat-card__body">
-                                    <span class="cat-card__name">{{ $category->name }}</span>
-                                    <span class="cat-card__cta">Shop Now <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="5" y1="12" x2="19" y2="12"></line><polyline points="12 5 19 12 12 19"></polyline></svg></span>
+                        <li class="splide__slide">
+                            <a href="{{ route('product.archive') }}?category={{ $category->slug }}" class="group block relative aspect-[3/4] sm:aspect-[4/5] md:aspect-auto md:h-76 rounded-sm overflow-hidden shadow-sm hover:shadow-xl transition-all duration-300 no-underline">
+                                <img src="{{ asset($category->image) }}" alt="{{ $category->name }}" class="w-full h-full object-cover group-hover:scale-108 transition-transform duration-500">
+                                <div class="absolute inset-0 bg-gradient-to-t from-black/80 via-black/25 to-transparent"></div>
+                                <div class="absolute bottom-0 left-0 right-0 p-3 sm:p-5 text-white flex flex-col items-start">
+                                    <span class="font-serif font-bold text-sm sm:text-base md:text-lg uppercase tracking-wider mb-1 group-hover:text-[#f3e9cf] transition-colors leading-tight truncate w-full">{{ $category->name }}</span>
+                                    <span class="text-[9px] sm:text-[10px] font-bold uppercase tracking-widest text-[#a28e46] bg-white px-2.5 py-0.5 sm:px-3 sm:py-1 rounded-none flex items-center gap-1 mt-0.5 shadow-sm">
+                                        Shop Now <i class="fa-solid fa-chevron-right text-[7px]"></i>
+                                    </span>
                                 </div>
                             </a>
                         </li>
@@ -79,846 +91,237 @@
             </div>
         </div>
     </section>
+    @endif
 
-  <!-- New Arrivals Products (carousel like Top Selling) -->
-  <section class="top-products">
-        <div class="container">
-            <div class="section-header section-header--fancy">
-                <h2 class="section-title">NEW ARRIVALS</h2>
-                <a href="{{ route('product.archive', ['sort' => 'newest']) }}" class="section-see-all">View All</a>
-            </div>
+    <!-- 3. Promotional 2-Column Banners (Warm Off-White Canvas with Luxury Light-Sweep) -->
+    <section class="py-6 md:py-14 bg-[#faf9f6] border-b border-stone-200/60">
+        <div class="container mx-auto px-3 sm:px-4 max-w-7xl">
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-4 lg:gap-8">
+                @php
+                    $b1 = $vlogBottomBanners[0] ?? null;
+                    $b2 = $vlogBottomBanners[1] ?? null;
+                @endphp
 
-            <div id="newArrivalsSplide" class="splide" aria-label="New Arrivals" style="visibility:hidden;">
-                <div class="splide__track">
-                    <ul class="splide__list" id="newArrivalsSplideList">
-                        <!-- Slides will be injected here -->
-                    </ul>
-                </div>
-            </div>
-            <div id="newArrivalsFallback" class="row product-grid g-3 px-2">
-                <!-- Skeleton loaders will be injected here -->
-            </div>
-        </div>
-    </section>
-
-    <!-- Top Selling Products -->
-    <section class="top-products">
-        <div class="container">
-            <div class="section-header section-header--fancy">
-                <h2 class="section-title ">TOP SELLING PRODUCTS</h2>
-                <a href="{{ route('product.archive') }}" class="section-see-all">View All</a>
-            </div>
-
-            <div id="mostSoldSplide" class="splide" aria-label="Top Selling Products" style="visibility:hidden;">
-                <div class="splide__track">
-                    <ul class="splide__list" id="mostSoldSplideList">
-                        <!-- Slides will be injected here -->
-                    </ul>
-                </div>
-            </div>
-            <div id="mostSoldFallback" class="row product-grid g-3 px-2">
-                <!-- Skeleton loaders will be injected here -->
-            </div>
-        </div>
-    </section>
-  
-  
-
-	<!-- Latest Vlogs Carousel (Splide) -->
-	<section class="home-vlogs">
-		<div class="container">
-			<div class="d-flex justify-content-between mb-5">
-				<div>
-					<h2 class="section-title mb-0 text-start">COLLECTIONS </h2>
-					<!-- <p class="section-subtitle text-start mb-0">Watch our latest Fashion & Lifestyle Vlogs</p> -->
-				</div>
-			</div>
-			
-			@if(!empty($vlogs) && count($vlogs))
-				<div id="vlogSplide" class="splide" aria-label="Latest Vlogs">
-					<div class="splide__track">
-						<ul class="splide__list">
-							@foreach($vlogs as $vlog)
-								<li class="splide__slide">
-									<div class="card h-100 border-0 shadow-sm vlog-card">
-										<div class="ratio ratio-16x9">
-											{!! $vlog->frame_code !!}
-										</div>
-									</div>
-								</li>
-							@endforeach
-						</ul>
-					</div>
-				</div>
-			@else
-				<div class="text-center text-muted">No vlogs available.</div>
-			@endif
-		</div>
-	</section>
-
-    
-
-	<!-- Vlogs -->
-
-    <!-- Best Deals (carousel, under vlogs) -->
-    <section class="top-products">
-        <div class="container">
-            <div class="section-header section-header--fancy">
-                <h2 class="section-title">BEST DEALS</h2>
-                <a href="{{ route('best.deal') }}" class="section-see-all">View All</a>
-            </div>
-
-            <div id="bestDealsSplide" class="splide" aria-label="Best Deals" style="visibility:hidden;">
-                <div class="splide__track">
-                    <ul class="splide__list" id="bestDealsSplideList">
-                        <!-- Slides will be injected here -->
-                    </ul>
-                </div>
-            </div>
-            <div id="bestDealsFallback" class="row product-grid g-3 px-2">
-                <!-- Skeleton loaders will be injected here -->
-            </div>
-        </div>
-    </section>
-
-    
-    @if(!empty($vlogBottomBanners) && count($vlogBottomBanners))
-    @php
-        $b1 = $vlogBottomBanners[0] ?? null;
-        $b2 = $vlogBottomBanners[1] ?? null;
-        $b3 = $vlogBottomBanners[2] ?? null;
-    @endphp
-    <section class="vlog-banners py-4">
-        <div class="container">
-            <div class="row g-3 align-items-stretch">
-                @if($b1)
-                <div class="col-lg-8">
-                    @if($b1->link_url)
-                        <a href="{{ $b1->link_url }}" target="_blank" class="d-block h-100">
-                            <img src="{{ $b1->image_url }}" alt="{{ $b1->title }}" class="img-fluid rounded w-100" style="height:100%;object-fit:cover;">
+                <!-- Column 1 Banner (Full Image) -->
+                <div class="w-full overflow-hidden rounded-sm">
+                    @if($b1 && $b1->image_url)
+                        <a href="{{ $b1->link_url ?? route('product.archive') }}" class="harosa-banner-box w-full block">
+                            <img src="{{ $b1->image_url }}" alt="{{ $b1->title ?? 'Promotion Banner 1' }}" class="w-full h-auto block object-contain">
                         </a>
                     @else
-                        <img src="{{ $b1->image_url }}" alt="{{ $b1->title }}" class="img-fluid rounded w-100" style="height:100%;object-fit:cover;">
+                        <a href="{{ route('product.archive') }}" class="harosa-banner-box w-full block">
+                            <img src="https://images.unsplash.com/photo-1522337360788-8b13dee7a37e?w=800&auto=format&fit=crop&q=80" alt="Skin & Body Care" class="w-full h-auto block object-contain">
+                        </a>
                     @endif
                 </div>
-                @endif
 
-                <div class="col-lg-4">
-                    <div class="d-flex flex-column gap-3 h-100">
-                        @if($b2)
-                        <div class="w-100">
-                            @if($b2->link_url)
-                                <a href="{{ $b2->link_url }}" target="_blank" class="d-block">
-                                    <img src="{{ $b2->image_url }}" alt="{{ $b2->title }}" class="img-fluid rounded w-100">
-                                </a>
-                            @else
-                                <img src="{{ $b2->image_url }}" alt="{{ $b2->title }}" class="img-fluid rounded w-100">
-                            @endif
-                        </div>
-                        @endif
-                        @if($b3)
-                        <div class="w-100">
-                            @if($b3->link_url)
-                                <a href="{{ $b3->link_url }}" target="_blank" class="d-block">
-                                    <img src="{{ $b3->image_url }}" alt="{{ $b3->title }}" class="img-fluid rounded w-100">
-                                </a>
-                            @else
-                                <img src="{{ $b3->image_url }}" alt="{{ $b3->title }}" class="img-fluid rounded w-100">
-                            @endif
-                        </div>
-                        @endif
+                <!-- Column 2 Banner (Full Image) -->
+                <div class="w-full overflow-hidden rounded-sm">
+                    @if($b2 && $b2->image_url)
+                        <a href="{{ $b2->link_url ?? route('product.archive') }}" class="harosa-banner-box w-full block">
+                            <img src="{{ $b2->image_url }}" alt="{{ $b2->title ?? 'Promotion Banner 2' }}" class="w-full h-auto block object-contain">
+                        </a>
+                    @else
+                        <a href="{{ route('product.archive') }}" class="harosa-banner-box w-full block">
+                            <img src="https://images.unsplash.com/photo-1556228720-195a672e8a03?w=800&auto=format&fit=crop&q=80" alt="Organic Creams" class="w-full h-auto block object-contain">
+                        </a>
+                    @endif
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- 4. Signature Tabbed Products Showcase (Pure White Canvas with Hover Add to Cart) -->
+    <section class="py-14 md:py-20 bg-white border-b border-stone-200/50">
+        <div class="container mx-auto px-4 max-w-7xl">
+            
+            <!-- Tab Navigation Header -->
+            <div class="flex items-center justify-center gap-6 md:gap-12 pb-10 text-center flex-wrap">
+                <button type="button" class="harosa-tab-btn active text-xs md:text-sm font-bold uppercase tracking-widest text-gray-400 hover:text-[#a28e46] transition-colors flex items-center gap-2 cursor-pointer pb-1.5 border-b-2 border-transparent focus:outline-none" data-tab-target="tab-new-arrivals">
+                    <span class="w-2 h-2 rounded-full bg-[#a28e46] inline-block"></span>
+                    <span>NEW ARRIVAL</span>
+                </button>
+
+                <button type="button" class="harosa-tab-btn text-xs md:text-sm font-bold uppercase tracking-widest text-gray-400 hover:text-[#a28e46] transition-colors flex items-center gap-2 cursor-pointer pb-1.5 border-b-2 border-transparent focus:outline-none" data-tab-target="tab-bestseller">
+                    <span class="w-2 h-2 rounded-full bg-gray-300 inline-block dot-indicator"></span>
+                    <span>BESTSELLER</span>
+                </button>
+
+                <button type="button" class="harosa-tab-btn text-xs md:text-sm font-bold uppercase tracking-widest text-gray-400 hover:text-[#a28e46] transition-colors flex items-center gap-2 cursor-pointer pb-1.5 border-b-2 border-transparent focus:outline-none" data-tab-target="tab-featured">
+                    <span class="w-2 h-2 rounded-full bg-gray-300 inline-block dot-indicator"></span>
+                    <span>FEATURED PRODUCTS</span>
+                </button>
+            </div>
+
+            <!-- Tab 1: New Arrivals -->
+            <div id="tab-new-arrivals" class="harosa-tab-pane block">
+                <div id="newArrivalsSplide" class="splide" aria-label="New Arrivals" style="visibility:hidden;">
+                    <div class="splide__track">
+                        <ul class="splide__list" id="newArrivalsSplideList"></ul>
                     </div>
+                </div>
+                <div id="newArrivalsFallback" class="grid grid-cols-2 md:grid-cols-4 gap-6"></div>
+            </div>
+
+            <!-- Tab 2: Bestseller (Top Selling) -->
+            <div id="tab-bestseller" class="harosa-tab-pane hidden">
+                <div id="mostSoldSplide" class="splide" aria-label="Bestsellers" style="visibility:hidden;">
+                    <div class="splide__track">
+                        <ul class="splide__list" id="mostSoldSplideList"></ul>
+                    </div>
+                </div>
+                <div id="mostSoldFallback" class="grid grid-cols-2 md:grid-cols-4 gap-6"></div>
+            </div>
+
+            <!-- Tab 3: Featured (Best Deals) -->
+            <div id="tab-featured" class="harosa-tab-pane hidden">
+                <div id="bestDealsSplide" class="splide" aria-label="Featured Products" style="visibility:hidden;">
+                    <div class="splide__track">
+                        <ul class="splide__list" id="bestDealsSplideList"></ul>
+                    </div>
+                </div>
+                <div id="bestDealsFallback" class="grid grid-cols-2 md:grid-cols-4 gap-6"></div>
+            </div>
+
+        </div>
+    </section>
+
+    <!-- 5. Trending Deals & Weekly Special Offers (Warm Off-White Canvas) -->
+    <section class="py-12 md:py-18 bg-[#faf9f6] border-b border-stone-200/60">
+        <div class="container mx-auto px-4 max-w-7xl">
+            <div class="flex items-center justify-between pb-3.5 mb-8 border-b border-stone-200/80">
+                <div class="relative">
+                    <h2 class="text-lg md:text-2xl font-serif font-bold text-gray-900 uppercase tracking-wide">
+                        WEEKLY SPECIAL OFFERS
+                    </h2>
+                    <span class="absolute -bottom-[15px] left-0 w-16 h-[2px] bg-[#a28e46]"></span>
+                </div>
+                <a href="{{ route('best.deal') }}" class="text-xs font-semibold uppercase tracking-wider text-gray-500 hover:text-[#a28e46] transition-colors no-underline">
+                    View All Offers <i class="fa-solid fa-arrow-right text-[10px] ml-1"></i>
+                </a>
+            </div>
+
+            <div id="weeklyDealsSplide" class="splide" aria-label="Weekly Best Deals" style="visibility:hidden;">
+                <div class="splide__track">
+                    <ul class="splide__list" id="weeklyDealsSplideList"></ul>
+                </div>
+            </div>
+            <div id="weeklyDealsFallback" class="grid grid-cols-2 md:grid-cols-4 gap-6"></div>
+        </div>
+    </section>
+
+    <!-- 6. 3-Column Luxury Feature Spotlight (Pure White Canvas) -->
+    <section class="py-14 md:py-20 bg-white border-b border-stone-200/50">
+        <div class="container mx-auto px-4 max-w-7xl">
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-6 lg:gap-8">
+                @php
+                    $defaultSpotlights = [
+                        [
+                            'image' => 'https://images.unsplash.com/photo-1571781926291-c477ebfd024b?w=600&auto=format&fit=crop&q=80',
+                            'subtitle' => 'SALE 30% OFF',
+                            'title' => 'NSI BALANCE GEL BODY BUILDER NUDE',
+                            'desc' => 'Praesent volutpat ut nisl in hendrerit. Vestibulum ante ipsum primis in faucibus.',
+                            'link' => route('product.archive'),
+                        ],
+                        [
+                            'image' => 'https://images.unsplash.com/photo-1592945403244-b3fbafd7f539?w=600&auto=format&fit=crop&q=80',
+                            'subtitle' => 'SALE 50% OFF',
+                            'title' => 'BUY NUDE BY BILL BLASS FOR HER EDC 100 ML',
+                            'desc' => 'Praesent volutpat ut nisl in hendrerit. Vestibulum ante ipsum primis in faucibus.',
+                            'link' => route('product.archive'),
+                        ],
+                        [
+                            'image' => 'https://images.unsplash.com/photo-1522337360788-8b13dee7a37e?w=600&auto=format&fit=crop&q=80',
+                            'subtitle' => 'SALE 20% OFF',
+                            'title' => 'PBM CREAM FOUNDATION MAKEUP',
+                            'desc' => 'Praesent volutpat ut nisl in hendrerit. Vestibulum ante ipsum primis in faucibus.',
+                            'link' => route('product.archive'),
+                        ]
+                    ];
+                @endphp
+
+                @for($i = 0; $i < 3; $i++)
+                    @php
+                        $item = (isset($featureDeals) && isset($featureDeals[$i])) ? $featureDeals[$i] : null;
+                        $img = $item ? ($item->image_url ?? $defaultSpotlights[$i]['image']) : $defaultSpotlights[$i]['image'];
+                        $subtitle = $item ? ($item->link_text ?: $defaultSpotlights[$i]['subtitle']) : $defaultSpotlights[$i]['subtitle'];
+                        $title = $item ? ($item->title ?: $defaultSpotlights[$i]['title']) : $defaultSpotlights[$i]['title'];
+                        $desc = $item ? ($item->description ?: $defaultSpotlights[$i]['desc']) : $defaultSpotlights[$i]['desc'];
+                        $link = $item ? ($item->link_url ?: $defaultSpotlights[$i]['link']) : $defaultSpotlights[$i]['link'];
+                    @endphp
+                    
+                    <div class="bg-white border border-stone-200/80 rounded-sm p-6 md:p-8 flex flex-col items-center text-center shadow-sm hover:shadow-xl transition-all duration-300 group">
+                        <!-- Product Photo (Rock-Solid Anti-Jitter Image Container) -->
+                        <a href="{{ $link }}" class="w-full aspect-[4/3] overflow-hidden mb-5 bg-stone-50 rounded-sm block group/img relative">
+                            <img src="{{ $img }}" alt="{{ $title }}" class="w-full h-full object-cover group-hover/img:scale-105 transition-transform duration-500 ease-out block pointer-events-none select-none" loading="lazy">
+                        </a>
+
+                        <!-- Subtitle -->
+                        <span class="text-[#a28e46] text-[11px] font-bold uppercase tracking-widest block mb-2">
+                            {{ $subtitle }}
+                        </span>
+
+                        <!-- Title -->
+                        <h4 class="font-serif text-sm md:text-base font-bold text-gray-900 uppercase tracking-wide leading-snug mb-2 line-clamp-2">
+                            <a href="{{ $link }}" class="hover:text-[#a28e46] transition-colors no-underline text-inherit">
+                                {{ $title }}
+                            </a>
+                        </h4>
+
+                        <!-- Description -->
+                        <p class="text-stone-500 text-xs font-normal italic leading-relaxed mb-6 line-clamp-2 max-w-[260px]">
+                            {{ $desc }}
+                        </p>
+
+                        <!-- Shop Now Button (Solid Gold Theme with White Text) -->
+                        <div class="mt-auto">
+                            <a href="{{ $link }}" class="inline-flex items-center justify-center bg-[#a28e46] hover:bg-[#8e7b39] text-white font-bold text-xs uppercase tracking-wider rounded-full px-8 py-2.5 transition-all duration-200 shadow-sm hover:shadow-md hover:-translate-y-0.5 no-underline">
+                                SHOP NOW
+                            </a>
+                        </div>
+                    </div>
+                @endfor
+
+            </div>
+        </div>
+    </section>
+
+    <!-- 6. Collections & Video Vlogs Section (Pure White Canvas) -->
+    @if(!empty($vlogs) && count($vlogs) > 0)
+    <section class="py-12 md:py-18 bg-white border-b border-stone-200/50">
+        <div class="container mx-auto px-4 max-w-7xl">
+            <div class="flex items-center justify-between pb-3.5 mb-8 border-b border-stone-200/80">
+                <div class="relative">
+                    <h2 class="text-xl md:text-2xl font-serif font-bold text-gray-900 uppercase tracking-wide">
+                        COLLECTIONS & VLOGS
+                    </h2>
+                    <span class="absolute -bottom-[15px] left-0 w-16 h-[2px] bg-[#a28e46]"></span>
+                </div>
+                <a href="{{ route('vlogs') }}" class="text-xs font-semibold uppercase tracking-wider text-gray-500 hover:text-[#a28e46] transition-colors no-underline">
+                    View All <i class="fa-solid fa-arrow-right text-[10px] ml-1"></i>
+                </a>
+            </div>
+
+            <div id="vlogSplide" class="splide" aria-label="Collections and Vlogs">
+                <div class="splide__track">
+                    <ul class="splide__list">
+                        @foreach($vlogs as $vlog)
+                            <li class="splide__slide">
+                                <div class="rounded-sm overflow-hidden shadow-md bg-white border border-stone-200/80">
+                                    <div class="aspect-video w-full">
+                                        {!! $vlog->frame_code !!}
+                                    </div>
+                                </div>
+                            </li>
+                        @endforeach
+                    </ul>
                 </div>
             </div>
         </div>
     </section>
     @endif
 
+    <!-- Toast Container -->
+    <div id="toast-container" class="fixed top-6 right-6 z-50 flex flex-col gap-2.5 pointer-events-none"></div>
 
-    <style>
-        /* Best Deals carousel: mirror Top Selling/New Arrivals styles - prevent layout shifts */
-        #bestDealsSplide { 
-            background: transparent !important;  
-            padding: 14px 0;
-            contain: layout style;
-            will-change: auto;
-        }
-        #bestDealsSplide .splide__slide { padding: 0px; position: relative; }
-        #bestDealsSplide .product-image-container { position: relative; height: 380px; border-radius: 4px 4px 0 0; overflow: hidden; background: #fff; }
-        #bestDealsSplide .product-image { width: 100%; height: 100%; object-fit: cover; display: block; transition: transform 0.5s ease; }
-        #bestDealsSplide .rating-badge { position: absolute; left: 10px; bottom: 10px; background: rgba(255,255,255,0.95); border-radius: 8px; padding: 4px 8px; font-size: 12px; box-shadow: 0 4px 14px rgba(0,0,0,0.12); display: flex; align-items: center; gap: 6px; }
-        #bestDealsSplide .rating-badge .star { color: #f59e0b; }
-        #bestDealsSplide .product-title { font-size: 18px; line-height: 1.3; margin-top: 8px; margin-bottom: 0px; color:rgb(25, 30, 39); font-weight: 500; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
-        #bestDealsSplide .price { font-size: 18px; font-weight: 700; margin-top: 2px; }
-        #bestDealsSplide .price .fw-bold { color: #059669; }
-        #bestDealsSplide .price .old { font-size: 14px; color: #9ca3af !important; text-decoration: line-through !important; margin-left: 8px; font-weight: 500; }
-        #bestDealsSplide .product-info { padding: 10px 12px 12px; }
-        #bestDealsSplide .wishlist-btn { position: absolute; top: 10px; right: 10px; z-index: 10; pointer-events: auto; cursor: pointer; background: #fff; width: 34px; height: 34px; border-radius: 50%; display: flex; align-items: center; justify-content: center; box-shadow: 0 4px 16px rgba(0,0,0,0.12); }
-        #bestDealsSplide .wishlist-btn i { pointer-events: none; font-size: 16px; }
-        #bestDealsSplide .product-actions { margin-top: 6px; }
-        #bestDealsSplide .btn-add-cart { padding: 6px 10px; font-size: 12px; }
-        @media (max-width: 991.98px) { 
-            #bestDealsSplide .product-image-container, 
-            #mostSoldSplide .product-image-container, 
-            #newArrivalsSplide .product-image-container { height: 240px; } 
-        }
-        
-        /* Skeleton Loader Styles */
-        .product-skeleton {
-            background: #fff;
-            border-radius: 4px;
-            box-shadow: 0 3px 14px rgba(0,0,0,0.06);
-            overflow: hidden;
-            position: relative;
-            height: 100%;
-            display: flex;
-            flex-direction: column;
-        }
-        
-        .skeleton-image {
-            width: 100%;
-            height: 380px;
-            background: linear-gradient(90deg, #f0f0f0 25%, #e0e0e0 50%, #f0f0f0 75%);
-            background-size: 200% 100%;
-            animation: skeleton-loading 1.5s infinite;
-        }
-        
-        .skeleton-wishlist {
-            position: absolute;
-            top: 10px;
-            right: 10px;
-            width: 34px;
-            height: 34px;
-            border-radius: 50%;
-            background: linear-gradient(90deg, #f0f0f0 25%, #e0e0e0 50%, #f0f0f0 75%);
-            background-size: 200% 100%;
-            animation: skeleton-loading 1.5s infinite;
-        }
-        
-        .skeleton-content {
-            padding: 10px 12px 12px;
-            display: flex;
-            flex-direction: column;
-            flex-grow: 1;
-        }
-        
-        .skeleton-title {
-            height: 20px;
-            background: linear-gradient(90deg, #f0f0f0 25%, #e0e0e0 50%, #f0f0f0 75%);
-            background-size: 200% 100%;
-            animation: skeleton-loading 1.5s infinite;
-            border-radius: 4px;
-            margin-bottom: 8px;
-        }
-        
-        .skeleton-title:first-child {
-            width: 85%;
-        }
-        
-        .skeleton-title:last-child {
-            width: 60%;
-            margin-top: 4px;
-        }
-        
-        .skeleton-price {
-            height: 24px;
-            width: 100px;
-            background: linear-gradient(90deg, #f0f0f0 25%, #e0e0e0 50%, #f0f0f0 75%);
-            background-size: 200% 100%;
-            animation: skeleton-loading 1.5s infinite;
-            border-radius: 4px;
-            margin-top: 8px;
-        }
-        
-        .skeleton-button {
-            height: 36px;
-            width: 100%;
-            background: linear-gradient(90deg, #f0f0f0 25%, #e0e0e0 50%, #f0f0f0 75%);
-            background-size: 200% 100%;
-            animation: skeleton-loading 1.5s infinite;
-            border-radius: 6px;
-            margin-top: auto;
-        }
-        
-        @keyframes skeleton-loading {
-            0% {
-                background-position: 200% 0;
-            }
-            100% {
-                background-position: -200% 0;
-            }
-        }
-        
-        @media (max-width: 991.98px) {
-            .skeleton-image {
-                height: 240px;
-            }
-        }
-        
-        /* Skeleton for carousel slides */
-        .splide__slide .product-skeleton {
-            margin: 0;
-        }
-    </style>
-
-
-    <div id="toast-container"
-        style="position: fixed; top: 24px; right: 24px; z-index: 16000; display: flex; flex-direction: column; gap: 10px;">
-    </div>
-
-    <!-- Video Modal -->
-    <!-- <div class="modal fade" id="videoModal" tabindex="-1" aria-labelledby="videoModalLabel" aria-hidden="true">
-        <div class="modal-dialog modal-xl" style="max-width:90vw;">
-            <div class="modal-content" style="height:90vh;">
-                <div class="modal-header border-0">
-                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
-                </div>
-                <div class="modal-body p-0 d-flex justify-content-center align-items-center"
-                    style="height:calc(90vh - 56px);">
-                    <div class="ratio ratio-16x9 w-100 h-100">
-                        <iframe id="youtubeVideo" width="100%" height="100%" src="" title="YouTube video player"
-                            frameborder="0"
-                            allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
-                            referrerpolicy="strict-origin-when-cross-origin" allowfullscreen></iframe>
-                    </div>
-                </div>
-            </div>
-        </div>
-    </div> -->
-
-    <style>
-        /* Categories - Splide adjustments */
-        .popular-categories #categorySplide .splide__list { list-style: none !important; margin: 0; padding: 0; }
-        .popular-categories #categorySplide .splide__slide { list-style: none !important; padding: 0 8px; }
-        /* Ensure Splide arrows render above content */
-        .popular-categories #categorySplide .splide__arrows { z-index: 3; }
-        /* Hero splide - Full Width */
-        .splide-hero .splide__list, .splide-hero .splide__slide { height: 100%; }
-        .splide-hero { border-radius: 0; overflow: hidden; }
-        .home-hero { padding: 0 !important; padding-top: 0 !important; }
-        .home-hero .container-fluid { padding: 0 !important; }
-        /* Hero slide image styles are now in ecommerce.css to avoid conflicts */
-        .splide-hero .splide__arrow { display: none !important; }
-        .splide-hero .splide__arrows { display: none !important; }
-        .splide-hero .splide__pagination__page.is-active { background: #111827; }
-        .hero-caption { position: absolute; left: 24px; bottom: 24px; color: #fff; text-shadow: 0 2px 8px rgba(0,0,0,0.3); }
-        /* Top selling carousel spacing - prevent layout shifts */
-        #mostSoldSplide { 
-            background: transparent !important; 
-            padding: 20px 0px;
-            contain: layout style;
-            will-change: auto;
-        }
-        #mostSoldSplide .splide__slide { padding: 0 0px; position: relative; }
-        /* Make top selling cards a bit smaller and ensure icons/ratings show */
-        #mostSoldSplide .product-card { padding: 0 !important; }
-        #mostSoldSplide .product-image-container { position: relative; height: 380px; border-radius: 4px 4px 0 0; overflow: hidden; background: #fff; }
-        #mostSoldSplide .product-image { width: 100%; height: 100%; object-fit: cover; display: block; transition: transform 0.5s ease; }
-        #mostSoldSplide .rating-badge { position: absolute; left: 10px; bottom: 10px; background: rgba(255,255,255,0.95); border-radius: 8px; padding: 4px 8px; font-size: 12px; box-shadow: 0 4px 14px rgba(0,0,0,0.12); display: flex; align-items: center; gap: 6px; }
-        #mostSoldSplide .rating-badge .star { color: #f59e0b; }
-        #mostSoldSplide .product-title { font-size: 18px; line-height: 1.4; margin-top: 10px; margin-bottom: 2px; color:rgb(25, 30, 39); font-weight: 600; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
-        #mostSoldSplide .price { font-size: 18px; font-weight: 700; margin-top: 2px; }
-        #mostSoldSplide .price .fw-bold { color: #059669; }
-        #mostSoldSplide .price .old { font-size: 14px; color: #9ca3af !important; text-decoration: line-through !important; margin-left: 8px; font-weight: 500; }
-        #mostSoldSplide .product-info { padding: 10px 12px 12px; }
-        #mostSoldSplide .wishlist-btn { position: absolute; top: 10px; right: 10px; z-index: 10; pointer-events: auto; cursor: pointer; background: #fff; width: 34px; height: 34px; border-radius: 50%; display: flex; align-items: center; justify-content: center; box-shadow: 0 4px 16px rgba(0,0,0,0.12); }
-        #mostSoldSplide .wishlist-btn i { pointer-events: none; font-size: 16px; }
-        #mostSoldSplide .product-meta .stars i { color: #fbbf24; margin-right: 2px; font-size: 12px; }
-        #mostSoldSplide .product-actions { margin-top: 6px; }
-        #mostSoldSplide .btn-add-cart { padding: 6px 10px; font-size: 12px; }
-        
-        
-        @media (max-width: 991.98px) { #mostSoldSplide .product-image-container { height: 240px; } }
-        /* remove hover border if any framework styles apply */
-        #mostSoldSplide .product-card.no-hover-border:hover { border-color: transparent !important; border: none !important; box-shadow: 0 6px 18px rgba(0,0,0,0.08); }
-        .product-card:hover .product-image { transform: scale(1.1); }
-
-        /* New Arrivals carousel: mirror Top Selling styles - prevent layout shifts */
-        #newArrivalsSplide { 
-            background: transparent !important;  
-            padding: 14px 0px;
-            contain: layout style;
-            will-change: auto;
-        }
-        #newArrivalsSplide .splide__slide { padding: 0px; position: relative; }
-        #newArrivalsSplide .product-card { 
-            padding: 0 !important; 
-        }
-        #newArrivalsSplide .product-image-container { position: relative; height: 380px; border-radius: 4px 4px 0 0; overflow: hidden; background: #fff; }
-        #newArrivalsSplide .product-image { width: 100%; height: 100%; object-fit: cover; display: block; transition: transform 0.5s ease; }
-        #newArrivalsSplide .rating-badge { position: absolute; left: 10px; bottom: 10px; background: rgba(255,255,255,0.95); border-radius: 8px; padding: 4px 8px; font-size: 12px; box-shadow: 0 4px 14px rgba(0,0,0,0.12); display: flex; align-items: center; gap: 6px; }
-        #newArrivalsSplide .rating-badge .star { color: #f59e0b; }
-        #newArrivalsSplide .product-title { font-size: 18px; line-height: 1.4; margin-top: 10px; margin-bottom: 2px; color:rgb(25, 30, 39); font-weight: 600; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
-        #newArrivalsSplide .price { font-size: 18px; font-weight: 700; margin-top: 2px; }
-        #newArrivalsSplide .price .fw-bold { color: #059669; }
-        #newArrivalsSplide .price .old { font-size: 14px; color: #9ca3af !important; text-decoration: line-through !important; margin-left: 8px; font-weight: 500; }
-        #newArrivalsSplide .product-info { padding: 10px 12px 12px; }
-        #newArrivalsSplide .wishlist-btn { position: absolute; top: 10px; right: 10px; z-index: 10; pointer-events: auto; cursor: pointer; background: #fff; width: 34px; height: 34px; border-radius: 50%; display: flex; align-items: center; justify-content: center; box-shadow: 0 4px 16px rgba(0,0,0,0.12); }
-        #newArrivalsSplide .wishlist-btn i { pointer-events: none; font-size: 16px; }
-        #newArrivalsSplide .product-actions { margin-top: 6px; }
-        #newArrivalsSplide .btn-add-cart { padding: 6px 10px; font-size: 12px; }
-        
-        
-        @media (max-width: 991.98px) { #newArrivalsSplide .product-image-container { height: 240px; } }
-        /* ── Category Carousel Container ──────────────────────────── */
-        #categorySplide {
-            background: transparent;
-            contain: layout style;
-            will-change: auto;
-            padding: 8px 0 16px;
-        }
-        .popular-categories #categorySplide .splide__list  { align-items: stretch; }
-        .popular-categories #categorySplide .splide__slide  { padding: 0 6px; }
-
-        /* ── Cat Card ──────────────────────────────────────────────── */
-        .cat-card {
-            position: relative;
-            display: block;
-            width: 100%;
-            height: 280px;
-            border-radius: 14px;
-            overflow: hidden;
-            text-decoration: none !important;
-            cursor: pointer;
-            box-shadow: 0 4px 20px rgba(0,0,0,0.10);
-            transition: transform .35s cubic-bezier(.22,.61,.36,1),
-                        box-shadow .35s cubic-bezier(.22,.61,.36,1);
-        }
-        .cat-card:hover {
-            transform: translateY(-6px);
-            box-shadow: 0 16px 40px rgba(0,0,0,0.18);
-        }
-
-        /* Image + zoom */
-        .cat-card__img {
-            position: absolute;
-            inset: 0;
-            width: 100%;
-            height: 100%;
-        }
-        .cat-card__img img {
-            width: 100%;
-            height: 100%;
-            object-fit: cover;
-            display: block;
-            transition: transform .55s cubic-bezier(.22,.61,.36,1);
-        }
-        .cat-card:hover .cat-card__img img {
-            transform: scale(1.08);
-        }
-
-        /* Dark gradient overlay */
-        .cat-card__overlay {
-            position: absolute;
-            inset: 0;
-            background: linear-gradient(
-                to top,
-                rgba(10,10,10,0.78) 0%,
-                rgba(10,10,10,0.28) 50%,
-                rgba(10,10,10,0.04) 100%
-            );
-            transition: opacity .35s ease;
-        }
-        .cat-card:hover .cat-card__overlay {
-            opacity: 0.92;
-        }
-
-        /* Text body at bottom */
-        .cat-card__body {
-            position: absolute;
-            left: 0; right: 0; bottom: 0;
-            padding: 20px 18px 18px;
-            display: flex;
-            flex-direction: column;
-            align-items: flex-start;
-            gap: 6px;
-        }
-        .cat-card__name {
-            display: block;
-            color: #fff;
-            font-size: 17px;
-            font-weight: 700;
-            letter-spacing: .04em;
-            text-transform: uppercase;
-            line-height: 1.2;
-            text-shadow: 0 2px 8px rgba(0,0,0,0.4);
-            position: relative;
-        }
-        /* animated underline on name */
-        .cat-card__name::after {
-            content: '';
-            position: absolute;
-            left: 0; bottom: -3px;
-            width: 0; height: 2px;
-            background: #fff;
-            border-radius: 2px;
-            transition: width .35s ease;
-        }
-        .cat-card:hover .cat-card__name::after {
-            width: 100%;
-        }
-
-        .cat-card__cta {
-            display: inline-flex;
-            align-items: center;
-            gap: 5px;
-            color: rgba(255,255,255,0.75);
-            font-size: 12px;
-            font-weight: 500;
-            letter-spacing: .06em;
-            text-transform: uppercase;
-            opacity: 0;
-            transform: translateY(6px);
-            transition: opacity .3s ease .05s, transform .3s ease .05s;
-        }
-        .cat-card:hover .cat-card__cta {
-            opacity: 1;
-            transform: translateY(0);
-        }
-        .cat-card__cta svg {
-            transition: transform .25s ease;
-        }
-        .cat-card:hover .cat-card__cta svg {
-            transform: translateX(3px);
-        }
-
-        /* ── Responsive ────────────────────────────────────────────── */
-        @media (max-width: 768px) {
-            .cat-card { height: 190px; border-radius: 10px; }
-            .cat-card__name { font-size: 14px; }
-            .cat-card__body { padding: 14px 12px 12px; gap: 4px; }
-        }
-        @media (max-width: 576px) {
-            .cat-card { height: 165px; border-radius: 8px; }
-            .cat-card__name { font-size: 13px; }
-            .cat-card__cta { display: none; }
-        }
-		/* Scope styles to vlogs section only */
-		@media (min-width: 1200px) {
-			.home-vlogs > .container {
-				max-width: none;
-				width: 80%;
-			}
-			.vlog-banners > .container {
-				max-width: none;
-				width: 80%;
-                /* padding: 0 10px !important; */
-			}
-		}
-
-		.home-vlogs { padding: 10px 0; }
-		/* Allow interacting with YouTube controls */
-		.home-vlogs .ratio iframe { pointer-events: auto; }
-        /* Splide spacing for vlogs */
-        #vlogSplide { background:rgb(253, 253, 253);  padding: 8px 0px; }
-        #vlogSplide .splide__slide { padding: 0px; }
-		#vlogSplide .splide__arrows { z-index: 2; }
-		@media (max-width: 991.98px) { #vlogSplide .splide__slide { padding: 0 8px; } }
-        .custom-toast {
-            min-width: 220px;
-            max-width: 340px;
-            background: #fff;
-            color: #222;
-            padding: 0;
-            border-radius: 10px;
-            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.18);
-            font-size: 16px;
-            opacity: 1;
-            transition: opacity 0.4s, transform 0.4s;
-            margin-left: auto;
-            margin-right: 0;
-            pointer-events: auto;
-            z-index: 16000;
-            overflow: hidden;
-            border-left: 5px solid #2196F3;
-            position: relative;
-        }
-
-        .custom-toast.error {
-            border-left-color: #e53935;
-        }
-
-        .custom-toast .toast-content {
-            display: flex;
-            align-items: center;
-            gap: 12px;
-            padding: 16px 18px 14px 16px;
-        }
-
-        .custom-toast .toast-icon {
-            font-size: 22px;
-            flex-shrink: 0;
-        }
-
-        .custom-toast .toast-message {
-            flex: 1;
-            font-weight: 500;
-        }
-
-        .custom-toast .toast-close {
-            background: none;
-            border: none;
-            color: #888;
-            font-size: 22px;
-            cursor: pointer;
-            margin-left: 8px;
-            transition: color 0.2s;
-        }
-
-        .custom-toast .toast-close:hover {
-            color: #e53935;
-        }
-
-        .custom-toast .toast-progress {
-            position: absolute;
-            left: 0;
-            bottom: 0;
-            height: 3px;
-            width: 100%;
-            background: linear-gradient(90deg, #2196F3, #21cbf3);
-            transition: width 2.3s linear;
-        }
-
-        .custom-toast.error .toast-progress {
-            background: linear-gradient(90deg, #e53935, #ffb199);
-        }
-
-        .wishlist-btn i.fa-heart.active {
-            color: #e53935 !important;
-        }
-
-        /* Mobile specific font reductions for section headers */
-        @media (max-width: 768px) {
-            .splide__arrows {
-                display: none !important;
-            }
-        }
-    </style>
 @endsection
-
-@push('scripts')
-    <script>
-        // Categories carousel now uses Splide (initialized in app.js)
-        // Arrow-only navigation: scroll by viewport width (2 items desktop, 1 mobile)
-        (function(){
-            const scroller = document.getElementById('vlogScroller');
-            const prev = document.getElementById('vlogPrev');
-            const next = document.getElementById('vlogNext');
-            if (!scroller || !prev || !next) return;
-
-            const step = () => {
-                const style = getComputedStyle(scroller);
-                const gap = parseFloat(style.gap) || 0;
-                const first = scroller.querySelector('.vlog-item');
-                if (!first) return 0;
-                const itemWidth = first.getBoundingClientRect().width + gap;
-                const perView = window.innerWidth >= 992 ? 2 : 1;
-                return itemWidth * perView;
-            };
-
-            const updateButtons = () => {
-                // enable when there is hidden content on either side
-                prev.disabled = scroller.scrollLeft <= 0;
-                const max = scroller.scrollWidth - scroller.clientWidth - 1;
-                next.disabled = scroller.scrollLeft >= max;
-            };
-
-            prev.addEventListener('click', () => { scroller.scrollBy({ left: -step(), behavior: 'smooth' }); setTimeout(updateButtons, 350); });
-            next.addEventListener('click', () => { scroller.scrollBy({ left: step(), behavior: 'smooth' }); setTimeout(updateButtons, 350); });
-
-            window.addEventListener('resize', updateButtons);
-            window.addEventListener('load', updateButtons);
-            updateButtons();
-        })();
-        window.showToast = function (message, type = 'success') {
-            const toast = document.createElement('div');
-            toast.className = 'custom-toast ' + type;
-            toast.innerHTML = `
-                        <div class="toast-content">
-                            <span class="toast-icon">${type === 'error' ? '❌' : ''}</span>
-                            <span class="toast-message">${message}</span>
-                            <button class="toast-close" onclick="this.parentElement.parentElement.classList.add('hide'); setTimeout(()=>this.parentElement.parentElement.remove(), 400);">&times;</button>
-                        </div>
-                        <div class="toast-progress"></div>
-                    `;
-            document.getElementById('toast-container').appendChild(toast);
-            // Animate progress bar
-            setTimeout(() => {
-                toast.querySelector('.toast-progress').style.width = '0%';
-            }, 10);
-            setTimeout(() => {
-                toast.classList.add('hide');
-                setTimeout(() => toast.remove(), 400);
-            }, 2500);
-        }
-        // Old jQuery code removed - now using the new JavaScript implementation in app.js
-
-        $(function () {
-            // New Arrivals now rendered and initialized via Splide in resources/js/app.js
-        });
-
-        // Safe modal initialization utility
-        function safeModalInit(modalId, options = {}) {
-            const modalElement = document.getElementById(modalId);
-            if (!modalElement) {
-                console.warn(`Modal element with id '${modalId}' not found`);
-                return null;
-            }
-            
-            try {
-                return new bootstrap.Modal(modalElement, options);
-            } catch (error) {
-                console.error(`Failed to initialize modal '${modalId}':`, error);
-                return null;
-            }
-        }
-
-        document.addEventListener('DOMContentLoaded', function () {
-            var playBtn = document.getElementById('playVideoBtn');
-            var videoModalElement = document.getElementById('videoModal');
-            var youtubeVideo = document.getElementById('youtubeVideo');
-            var YOUTUBE_URL = 'https://www.youtube.com/embed/np0FD080?autoplay=1'; // Replace YOUR_VIDEO_ID
-
-            // Only initialize modal if the elements exist
-            if (playBtn && videoModalElement && youtubeVideo) {
-                var videoModal = safeModalInit('videoModal');
-
-                if (videoModal) {
-                    playBtn.addEventListener('click', function () {
-                        youtubeVideo.src = YOUTUBE_URL;
-                        videoModal.show();
-                    });
-                    
-                    videoModalElement.addEventListener('hidden.bs.modal', function () {
-                        youtubeVideo.src = '';
-                    });
-                }
-            } else {
-                console.log('Video modal elements not found - modal functionality disabled');
-            }
-        });
-
-    </script>
-    <style>
-        .custom-toast {
-            min-width: 220px;
-            max-width: 340px;
-            background: #fff;
-            color: #222;
-            padding: 0;
-            border-radius: 10px;
-            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.18);
-            font-size: 16px;
-            opacity: 1;
-            transition: opacity 0.4s, transform 0.4s;
-            margin-left: auto;
-            margin-right: 0;
-            pointer-events: auto;
-            z-index: 16000;
-            overflow: hidden;
-            border-left: 5px solid #2196F3;
-            position: relative;
-        }
-
-        .custom-toast.error {
-            border-left-color: #e53935;
-        }
-
-        .custom-toast .toast-content {
-            display: flex;
-            align-items: center;
-            gap: 12px;
-            padding: 16px 18px 14px 16px;
-        }
-
-        .custom-toast .toast-icon {
-            font-size: 22px;
-            flex-shrink: 0;
-        }
-
-        .custom-toast .toast-message {
-            flex: 1;
-            font-weight: 500;
-        }
-
-        .custom-toast .toast-close {
-            background: none;
-            border: none;
-            color: #888;
-            font-size: 22px;
-            cursor: pointer;
-            margin-left: 8px;
-            transition: color 0.2s;
-        }
-
-        .custom-toast .toast-close:hover {
-            color: #e53935;
-        }
-
-        .custom-toast .toast-progress {
-            position: absolute;
-            left: 0;
-            bottom: 0;
-            height: 3px;
-            width: 100%;
-            background: linear-gradient(90deg, #2196F3, #21cbf3);
-            transition: width 2.3s linear;
-        }
-
-        .custom-toast.error .toast-progress {
-            background: linear-gradient(90deg, #e53935, #ffb199);
-        }
-
-        .custom-toast.hide {
-            opacity: 0;
-            transform: translateY(-20px) scale(0.98);
-        }
-
-        .wishlist-btn i.fa-heart.active {
-            color: #e53935 !important;
-        }
-        .product-card-price .current {
-            font-size: 1.1rem;
-            font-weight: 700;
-            color: #111827;
-        }
-        .product-card-price .original {
-            font-size: 0.9rem;
-            text-decoration: line-through;
-            color: #9ca3af;
-            margin-left: 8px;
-        }
-
-        /* Premium Splide Arrows */
-        .splide__arrow {
-            background: #fff !important;
-            border: 1px solid #e5e7eb !important;
-            opacity: 1 !important;
-            width: 40px !important;
-            height: 40px !important;
-            box-shadow: 0 4px 12px rgba(0,0,0,0.06) !important;
-            transition: all 0.3s ease !important;
-        }
-        .splide__arrow:hover {
-            background: #00512C !important;
-            border-color: #00512C !important;
-            color: #fff !important;
-        }
-        .splide__arrow svg {
-            fill: #374151 !important;
-            transition: fill 0.3s ease !important;
-        }
-        .splide__arrow:hover svg {
-            fill: #fff !important;
-        }
-        .splide__arrow--prev { left: -20px !important; }
-        .splide__arrow--next { right: -20px !important; }
-
-        @media (max-width: 991.98px) { 
-            .product-card .product-image-container { height: 240px; } 
-            .splide__arrow--prev { left: 5px !important; }
-            .splide__arrow--next { right: 5px !important; }
-        }
-
-    </style>
-@endpush

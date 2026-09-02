@@ -78,7 +78,12 @@ class AppServiceProvider extends ServiceProvider
                 ->where('status', 'active')
                 ->where('show_in_ecommerce', 1)
                 ->with(['children' => function($q) {
-                    $q->where('status', 'active')->where('show_in_ecommerce', 1)->orderBy('name');
+                    $q->where('status', 'active')
+                      ->where('show_in_ecommerce', 1)
+                      ->with(['children' => function($q2) {
+                          $q2->where('status', 'active')->where('show_in_ecommerce', 1);
+                      }])
+                      ->orderBy('name');
                 }])
                 ->orderBy('name')
                 ->get();

@@ -121,6 +121,10 @@
     <meta name="csrf-token" content="{{ csrf_token() }}">
     <meta name="auth-check" content="{{ auth()->check() ? '1' : '0' }}">
 
+    @if($general_settings && $general_settings->site_logo)
+        <link rel="preload" as="image" href="{{ asset($general_settings->site_logo) }}" fetchpriority="high">
+    @endif
+
     @php
         // Prefer explicit SEO product if provided
         $___seo = isset($seoProduct) && $seoProduct ? $seoProduct : (isset($product) ? $product : null);
@@ -177,23 +181,21 @@
     @endif
     <link rel="icon" type="image/x-icon" href="{{ $general_settings && $general_settings->site_favicon ? asset($general_settings->site_favicon) . '?v=' . time() : asset('static/default-site-icon.webp') }}">
     <link rel="shortcut icon" href="{{ $general_settings && $general_settings->site_favicon ? asset($general_settings->site_favicon) . '?v=' . time() : asset('static/default-site-icon.webp') }}">
-    <!-- Critical Styles: Loaded synchronously to prevent Layout Shift (CLS) -->
+    <!-- Critical Styles & Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700&family=Playfair+Display:ital,wght@0,400;0,600;0,700;1,400&display=swap" rel="stylesheet">
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
     <link href="https://cdn.jsdelivr.net/npm/swiper@9/swiper-bundle.min.css" rel="stylesheet">
     <link href="https://cdn.jsdelivr.net/npm/nouislider@15.7.1/dist/nouislider.min.css" rel="stylesheet">
-    <link href="{{ asset('ecommerce.css') }}?v={{ @filemtime(public_path('ecommerce.css')) }}" rel="stylesheet" />
 
     @stack('styles')
-    @vite(['resources/js/app.js'])
+    @stack('head')
+    @vite(['resources/css/app.css', 'resources/js/app.js'])
     <style>
         html {
             scrollbar-gutter: stable; /* Prevent horizontal jump when scrollbar appears */
-        }
-        body {
-            font-family: 'Segoe UI', 'SegoeUI', 'Helvetica Neue', Helvetica, Arial, 'Noto Sans', 'Liberation Sans', 'Apple Color Emoji', 'Segoe UI Emoji', 'Segoe UI Symbol', sans-serif;
-            -webkit-font-smoothing: antialiased;
-            text-rendering: optimizeLegibility;
         }
     </style>
 </head>

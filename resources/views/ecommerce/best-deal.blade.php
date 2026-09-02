@@ -1,414 +1,171 @@
 @extends('ecommerce.master')
 
+@section('title', 'Best Deals & Exclusive Offers - Harosa Luxury')
+
 @section('main-section')
-    <style></style>
-    <section class="featured-categories featured-plain pb-3 pt-5">
-        <div class="container-fluid px-lg-4 px-xl-5">
-            <h2 class="section-title text-start">Best Deal</h2>
-        </div>
-    </section>
+<div class="bg-stone-50/60 min-h-screen pb-20">
 
-    <div class="container-fluid px-lg-4 px-xl-5 py-4">
-        <div class="row g-2 g-md-4 grid-5" id="best-deal-container" data-has-more="{{ $products->hasMorePages() ? 'true' : 'false' }}" data-current-page="{{ $products->currentPage() }}">
-            @include('ecommerce.partials.best-deal-grid', ['products' => $products, 'hidePagination' => true])
-        </div>
-    </div>
-    
-    <!-- Loading indicator and Load More button (outside container for proper positioning) -->
-    <div class="container-fluid px-lg-4 px-xl-5">
-        <div id="best-deal-loading" class="text-center py-4" style="display: none;">
-            <div class="spinner-border text-primary" role="status">
-                <span class="visually-hidden">Loading...</span>
+    <!-- 1. Luxury Flash Sale Hero Banner -->
+    <div class="bg-gradient-to-r from-[#111111] via-[#1c1917] to-[#262013] text-white py-12 md:py-16 relative overflow-hidden border-b border-[#a28e46]/30">
+        <!-- Subtle Gold Decorative Glow -->
+        <div class="absolute -top-24 -right-24 w-96 h-96 bg-[#a28e46]/10 rounded-full blur-3xl pointer-events-none"></div>
+        <div class="absolute -bottom-24 -left-24 w-96 h-96 bg-[#a28e46]/10 rounded-full blur-3xl pointer-events-none"></div>
+
+        <div class="container mx-auto px-4 max-w-7xl relative z-10">
+            <div class="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-8 text-center lg:text-left">
+                
+                <!-- Left: Title & Subtitle -->
+                <div class="max-w-2xl">
+                    <div class="inline-flex items-center gap-2 bg-[#a28e46]/20 border border-[#a28e46]/40 text-[#d4af37] px-3.5 py-1 text-[11px] font-bold uppercase tracking-widest rounded-full mb-3.5">
+                        <i class="fa-solid fa-bolt text-xs"></i>
+                        <span>LIMITED TIME EXCLUSIVE OFFERS</span>
+                    </div>
+                    <h1 class="font-serif text-3xl sm:text-4xl lg:text-5xl font-bold tracking-tight text-white uppercase mb-3">
+                        BEST BEAUTY & COSMETICS DEALS
+                    </h1>
+                    <p class="text-stone-300 text-xs sm:text-sm font-light leading-relaxed max-w-xl">
+                        Indulge in our curated selection of premium skincare, makeup, and perfumes at exclusive celebratory prices. Handpicked luxury for your daily routine.
+                    </p>
+                </div>
+
+                <!-- Right: Live Flash Deal Countdown Timer -->
+                <div class="bg-black/40 backdrop-blur-md border border-[#a28e46]/40 rounded-sm p-5 sm:p-6 shadow-2xl flex flex-col items-center mx-auto lg:mx-0">
+                    <span class="text-[10px] uppercase font-bold tracking-widest text-stone-400 mb-3 flex items-center gap-1.5">
+                        <i class="fa-regular fa-clock text-[#a28e46]"></i> DEALS EXPIRE IN
+                    </span>
+                    <div class="flex items-center gap-2 sm:gap-3" id="dealCountdown">
+                        <div class="flex flex-col items-center">
+                            <span class="w-12 sm:w-14 h-12 sm:h-14 bg-stone-900 border border-stone-700/80 rounded flex items-center justify-center font-mono font-bold text-lg sm:text-xl text-[#d4af37] shadow-inner" id="cdDays">02</span>
+                            <span class="text-[9px] uppercase tracking-wider text-stone-400 mt-1">Days</span>
+                        </div>
+                        <span class="text-stone-500 font-bold text-lg pb-4">:</span>
+                        <div class="flex flex-col items-center">
+                            <span class="w-12 sm:w-14 h-12 sm:h-14 bg-stone-900 border border-stone-700/80 rounded flex items-center justify-center font-mono font-bold text-lg sm:text-xl text-white shadow-inner" id="cdHours">14</span>
+                            <span class="text-[9px] uppercase tracking-wider text-stone-400 mt-1">Hours</span>
+                        </div>
+                        <span class="text-stone-500 font-bold text-lg pb-4">:</span>
+                        <div class="flex flex-col items-center">
+                            <span class="w-12 sm:w-14 h-12 sm:h-14 bg-stone-900 border border-stone-700/80 rounded flex items-center justify-center font-mono font-bold text-lg sm:text-xl text-white shadow-inner" id="cdMinutes">36</span>
+                            <span class="text-[9px] uppercase tracking-wider text-stone-400 mt-1">Mins</span>
+                        </div>
+                        <span class="text-stone-500 font-bold text-lg pb-4">:</span>
+                        <div class="flex flex-col items-center">
+                            <span class="w-12 sm:w-14 h-12 sm:h-14 bg-stone-900 border border-stone-700/80 rounded flex items-center justify-center font-mono font-bold text-lg sm:text-xl text-[#d4af37] shadow-inner" id="cdSeconds">50</span>
+                            <span class="text-[9px] uppercase tracking-wider text-stone-400 mt-1">Secs</span>
+                        </div>
+                    </div>
+                </div>
+
             </div>
-            <p class="mt-2 text-muted">Loading more products...</p>
-        </div>
-        <div id="best-deal-load-more-btn" class="text-center py-4" style="display: none;">
-            <button class="btn btn-primary" onclick="loadMoreBestDealProducts()">
-                <i class="fas fa-arrow-down me-2"></i>Load More Products
-            </button>
         </div>
     </div>
 
+    <!-- 2. Breadcrumb & Info Bar -->
+    <div class="bg-white border-b border-stone-200/60 py-3.5 mb-8">
+        <div class="container mx-auto px-4 max-w-7xl">
+            <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2 text-xs text-stone-500">
+                <nav class="flex items-center gap-2" aria-label="Breadcrumb">
+                    <a href="/" class="hover:text-[#a28e46] transition-colors no-underline">Home</a>
+                    <span class="text-stone-300">/</span>
+                    <span class="text-stone-900 font-medium">Best Deals</span>
+                </nav>
+                <div class="flex items-center gap-1 font-medium">
+                    <i class="fa-solid fa-tags text-[#a28e46]"></i>
+                    <span>Showing <strong id="bestDealCount" class="text-stone-900">{{ $products->total() }}</strong> curated special offers</span>
+                </div>
+            </div>
+        </div>
+    </div>
 
-@endsection
+    <!-- 3. Deals Container with AJAX Grid -->
+    <div class="container mx-auto px-4 max-w-7xl">
+        <div id="bestDealsProductsContainer" class="min-h-[450px] relative">
+            <!-- Loading Spinner Overlay -->
+            <div id="dealLoadingOverlay" class="absolute inset-0 bg-white/75 backdrop-blur-[1px] z-20 hidden flex items-center justify-center">
+                <div class="w-10 h-10 border-3 border-stone-200 border-t-[#a28e46] rounded-full animate-spin"></div>
+            </div>
+
+            @include('ecommerce.partials.best-deal-grid')
+        </div>
+    </div>
+
+</div>
 
 @push('scripts')
-    <script>
+<script>
+    // Live Flash Deal Countdown Logic
+    (function initCountdown() {
+        const targetDate = new Date();
+        targetDate.setDate(targetDate.getDate() + 3);
+        targetDate.setHours(23, 59, 59, 999);
 
+        function updateTimer() {
+            const now = new Date().getTime();
+            const diff = targetDate.getTime() - now;
 
-        // Infinite scroll state
-        const bestDealScrollState = {
-            currentPage: 1,
-            isLoading: false,
-            hasMore: true
-        };
+            if (diff <= 0) return;
 
-        // Initialize infinite scroll state
-        function initBestDealInfiniteScroll() {
-            const container = document.getElementById('best-deal-container');
-            if (!container) return;
+            const days = Math.floor(diff / (1000 * 60 * 60 * 24));
+            const hours = Math.floor((diff % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
+            const minutes = Math.floor((diff % (1000 * 60 * 60)) / (1000 * 60));
+            const seconds = Math.floor((diff % (1000 * 60)) / 1000);
 
-            const hasMoreAttr = container.getAttribute('data-has-more');
-            const currentPageAttr = container.getAttribute('data-current-page');
+            const dEl = document.getElementById('cdDays');
+            const hEl = document.getElementById('cdHours');
+            const mEl = document.getElementById('cdMinutes');
+            const sEl = document.getElementById('cdSeconds');
 
-            if (currentPageAttr) {
-                bestDealScrollState.currentPage = parseInt(currentPageAttr) || 1;
-            }
-            bestDealScrollState.isLoading = false;
-            bestDealScrollState.hasMore = hasMoreAttr === 'true';
-            
-            // Show/hide load more button based on initial state
-            const loadMoreBtn = document.getElementById('best-deal-load-more-btn');
-            if (loadMoreBtn) {
-                if (bestDealScrollState.hasMore) {
-                    loadMoreBtn.style.display = 'block';
-                } else {
-                    loadMoreBtn.style.display = 'none';
-                }
-            }
-
-            // Remove existing scroll listener
-            if (window.bestDealScrollHandler) {
-                window.removeEventListener('scroll', window.bestDealScrollHandler);
-                window.removeEventListener('touchmove', window.bestDealScrollHandler);
-            }
-
-            // Create scroll handler
-            window.bestDealScrollHandler = function() {
-                // Only proceed if we have more products and not currently loading
-                if (bestDealScrollState.isLoading || !bestDealScrollState.hasMore) {
-                    return;
-                }
-                
-                const scrollTop = window.pageYOffset || document.documentElement.scrollTop;
-                const windowHeight = window.innerHeight;
-                const documentHeight = document.documentElement.scrollHeight || document.body.scrollHeight;
-
-                // Load more when user is 300px from bottom
-                const distanceFromBottom = documentHeight - (scrollTop + windowHeight);
-                
-                // Debug logging (only occasionally to avoid spam)
-                if (Math.random() < 0.01) { // 1% chance to log
-                    console.log('Scroll check:', {
-                        scrollTop,
-                        windowHeight,
-                        documentHeight,
-                        distanceFromBottom,
-                        isLoading: bestDealScrollState.isLoading,
-                        hasMore: bestDealScrollState.hasMore,
-                        currentPage: bestDealScrollState.currentPage
-                    });
-                }
-                
-                if (distanceFromBottom < 300) {
-                    console.log('Triggering load more - distance from bottom:', distanceFromBottom);
-                    loadMoreBestDealProducts();
-                }
-            };
-
-            // Add scroll listeners
-            window.addEventListener('scroll', window.bestDealScrollHandler, { passive: true });
-            window.addEventListener('touchmove', window.bestDealScrollHandler, { passive: true });
+            if (dEl) dEl.textContent = String(days).padStart(2, '0');
+            if (hEl) hEl.textContent = String(hours).padStart(2, '0');
+            if (mEl) mEl.textContent = String(minutes).padStart(2, '0');
+            if (sEl) sEl.textContent = String(seconds).padStart(2, '0');
         }
 
-        // Load more products for infinite scroll
-        function loadMoreBestDealProducts() {
-            if (bestDealScrollState.isLoading || !bestDealScrollState.hasMore) {
-                console.log('Skipping load - isLoading:', bestDealScrollState.isLoading, 'hasMore:', bestDealScrollState.hasMore);
-                return;
-            }
+        updateTimer();
+        setInterval(updateTimer, 1000);
+    })();
 
-            bestDealScrollState.isLoading = true;
-            const container = document.getElementById('best-deal-container');
-            const loadingIndicator = document.getElementById('best-deal-loading');
-            
-            if (!container) {
-                console.error('Container not found!');
-                bestDealScrollState.isLoading = false;
-                return;
-            }
+    // Handle Best Deals AJAX Pagination
+    window.handleDealPagination = async function(e, targetUrl) {
+        if (e) e.preventDefault();
+        if (!targetUrl) return;
 
-            // Show loading indicator, hide load more button
-            if (loadingIndicator) {
-                loadingIndicator.style.display = 'block';
-            }
-            const loadMoreBtn = document.getElementById('best-deal-load-more-btn');
-            if (loadMoreBtn) {
-                loadMoreBtn.style.display = 'none';
-            }
+        const loading = document.getElementById('dealLoadingOverlay');
+        if (loading) loading.classList.remove('hidden');
 
-            // Get next page
-            const nextPage = bestDealScrollState.currentPage + 1;
-            const url = '{{ route("best.deal") }}?page=' + nextPage + '&infinite_scroll=true';
-            
-            console.log('Loading page', nextPage, 'from URL:', url);
-
-            // Try fetch first, fallback to XMLHttpRequest if blocked
-            let fetchPromise = fetch(url, {
-                method: 'GET',
+        try {
+            const res = await fetch(targetUrl, {
                 headers: {
                     'X-Requested-With': 'XMLHttpRequest',
-                    'Accept': 'application/json',
-                    'Content-Type': 'application/json'
-                },
-                credentials: 'same-origin'
-            }).catch(error => {
-                // If fetch is blocked, try XMLHttpRequest
-                console.warn('Fetch blocked, trying XMLHttpRequest fallback:', error);
-                return new Promise((resolve, reject) => {
-                    const xhr = new XMLHttpRequest();
-                    xhr.open('GET', url, true);
-                    xhr.setRequestHeader('X-Requested-With', 'XMLHttpRequest');
-                    xhr.setRequestHeader('Accept', 'application/json');
-                    xhr.onload = function() {
-                        if (xhr.status >= 200 && xhr.status < 300) {
-                            // Create a Response-like object
-                            resolve({
-                                ok: true,
-                                status: xhr.status,
-                                json: () => Promise.resolve(JSON.parse(xhr.responseText)),
-                                text: () => Promise.resolve(xhr.responseText)
-                            });
-                        } else {
-                            reject(new Error('HTTP ' + xhr.status + ': ' + xhr.statusText));
-                        }
-                    };
-                    xhr.onerror = function() {
-                        reject(new Error('Network error'));
-                    };
-                    xhr.send();
-                });
-            });
-
-            fetchPromise
-            .then(response => {
-                console.log('Response received, status:', response.status);
-                // Read body ONCE as text, then parse
-                return response.text().then(text => {
-                    if (!response.ok) {
-                        throw new Error('Server error ' + response.status + '. Please try again.');
-                    }
-                    try {
-                        return JSON.parse(text);
-                    } catch (e) {
-                        console.error('Response is not JSON:', text.substring(0, 300));
-                        throw new Error('Server returned non-JSON response. Please try again.');
-                    }
-                });
-            })
-            .then(data => {
-                console.log('Response data received:', {
-                    success: data.success,
-                    hasHtml: !!data.html,
-                    htmlLength: data.html ? data.html.length : 0,
-                    count: data.count,
-                    total: data.total,
-                    hasMore: data.hasMore,
-                    currentPage: data.currentPage
-                });
-                
-                if (loadingIndicator) {
-                    loadingIndicator.style.display = 'none';
-                }
-                bestDealScrollState.isLoading = false;
-                
-                // Show/hide load more button based on hasMore
-                const loadMoreBtn = document.getElementById('best-deal-load-more-btn');
-                if (loadMoreBtn && data.hasMore) {
-                    loadMoreBtn.style.display = 'block';
-                } else if (loadMoreBtn) {
-                    loadMoreBtn.style.display = 'none';
-                }
-
-                if (data.success && data.html) {
-                    // Extract product cards from the response HTML
-                    const tempDiv = document.createElement('div');
-                    tempDiv.innerHTML = data.html;
-                    
-                    // Get all col-* divs that contain product cards
-                    // Try multiple selectors to ensure we catch all product containers
-                    const productContainers = Array.from(tempDiv.querySelectorAll('.col-lg-3, .col-md-4, .col-sm-6, [class*="col-"]'))
-                        .filter(function(col) {
-                            // Only include if it contains a product-card, not no-products-container
-                            return col.querySelector('.product-card') && !col.querySelector('.no-products-container');
-                        });
-
-                    if (productContainers.length > 0) {
-                        // Get existing product IDs to avoid duplicates
-                        const existingProductIds = new Set();
-                        container.querySelectorAll('.col-lg-3, .col-md-4, .col-sm-6').forEach(function(col) {
-                            const productId = col.querySelector('.wishlist-btn[data-product-id]')?.getAttribute('data-product-id') ||
-                                            col.querySelector('.btn-add-cart[data-product-id]')?.getAttribute('data-product-id');
-                            if (productId) {
-                                existingProductIds.add(productId);
-                            }
-                        });
-                        
-                        // Append new products to container (avoid duplicates)
-                        let addedCount = 0;
-                        productContainers.forEach(function(cardContainer) {
-                            const productId = cardContainer.querySelector('.wishlist-btn[data-product-id]')?.getAttribute('data-product-id') ||
-                                            cardContainer.querySelector('.btn-add-cart[data-product-id]')?.getAttribute('data-product-id');
-                            if (!productId || !existingProductIds.has(productId)) {
-                                container.appendChild(cardContainer);
-                                if (productId) {
-                                    existingProductIds.add(productId);
-                                }
-                                addedCount++;
-                            }
-                        });
-                        
-                        // If no products were added (all duplicates), mark as no more
-                        if (addedCount === 0) {
-                            bestDealScrollState.hasMore = false;
-                            if (container) {
-                                container.setAttribute('data-has-more', 'false');
-                            }
-                            console.log('All products were duplicates, no more to load');
-                            return;
-                        }
-
-                        // Update state and container data attributes
-                        bestDealScrollState.currentPage = nextPage;
-                        bestDealScrollState.hasMore = data.hasMore !== undefined ? data.hasMore : false;
-                        
-                        // Also check if we got fewer products than expected (might be last page)
-                        if (productContainers.length < 20) {
-                            bestDealScrollState.hasMore = false;
-                        }
-                        
-                        if (container) {
-                            container.setAttribute('data-has-more', bestDealScrollState.hasMore ? 'true' : 'false');
-                            container.setAttribute('data-current-page', nextPage);
-                        }
-                        
-                        // Show/hide load more button
-                        const loadMoreBtn = document.getElementById('best-deal-load-more-btn');
-                        if (loadMoreBtn) {
-                            if (bestDealScrollState.hasMore) {
-                                loadMoreBtn.style.display = 'block';
-                            } else {
-                                loadMoreBtn.style.display = 'none';
-                            }
-                        }
-                        
-                        console.log('Loaded ' + addedCount + ' new products (total in response: ' + productContainers.length + '). Has more: ' + bestDealScrollState.hasMore);
-                    } else {
-                        // No products found in response
-                        bestDealScrollState.hasMore = false;
-                        if (container) {
-                            container.setAttribute('data-has-more', 'false');
-                        }
-                        console.log('No products found in response');
-                    }
-                } else {
-                    // Response was not successful or missing HTML
-                    bestDealScrollState.hasMore = false;
-                    if (container) {
-                        container.setAttribute('data-has-more', 'false');
-                    }
-                    console.error('Invalid response:', data);
-                }
-            })
-            .catch(error => {
-                console.error('Load more best deal products error:', error);
-                console.error('Error details:', {
-                    name: error.name,
-                    message: error.message,
-                    stack: error.stack
-                });
-                
-                if (loadingIndicator) {
-                    loadingIndicator.style.display = 'none';
-                }
-                bestDealScrollState.isLoading = false;
-                
-                // Handle specific error types
-                if (error.message && (error.message.includes('404') || error.message.includes('Blocked'))) {
-                    bestDealScrollState.hasMore = false;
-                    if (container) {
-                        container.setAttribute('data-has-more', 'false');
-                    }
-                    console.log('No more pages available or request blocked');
-                } else if (error.message && error.message.includes('Network error')) {
-                    // Network error - don't disable, user can retry by scrolling
-                    console.warn('Network error, will retry on next scroll');
-                }
-                
-                // Show error toast if function exists
-                if (typeof showToast === 'function') {
-                    let errorMsg = 'Failed to load more products. ';
-                    if (error.message && error.message.includes('Blocked')) {
-                        errorMsg += 'Request was blocked. Please disable ad blockers and try again.';
-                    } else {
-                        errorMsg += 'Please try again.';
-                    }
-                    showToast(errorMsg, 'error');
+                    'Accept': 'application/json'
                 }
             });
-        }
 
-        // Initialize on page load
-        document.addEventListener('DOMContentLoaded', function() {
-            console.log('Initializing best deal infinite scroll');
-            initBestDealInfiniteScroll();
-            
-            // Log initial state
-            const container = document.getElementById('best-deal-container');
-            if (container) {
-                console.log('Initial state:', {
-                    hasMore: container.getAttribute('data-has-more'),
-                    currentPage: container.getAttribute('data-current-page'),
-                    productCount: container.querySelectorAll('.product-card').length
-                });
+            const data = await res.json();
+            if (data && data.html) {
+                const container = document.getElementById('bestDealsProductsContainer');
+                if (container) {
+                    container.innerHTML = `<div id="dealLoadingOverlay" class="absolute inset-0 bg-white/75 backdrop-blur-[1px] z-20 hidden flex items-center justify-center"><div class="w-10 h-10 border-3 border-stone-200 border-t-[#a28e46] rounded-full animate-spin"></div></div>` + data.html;
+                }
+                window.history.pushState({}, '', targetUrl);
+
+                const countEl = document.getElementById('bestDealCount');
+                if (countEl && data.total !== undefined) countEl.textContent = data.total;
+
+                const mainArea = document.getElementById('bestDealsProductsContainer');
+                if (mainArea) {
+                    mainArea.scrollIntoView({ behavior: 'smooth', block: 'start' });
+                }
+            } else {
+                window.location.href = targetUrl;
             }
-            
-            // Also check if page is already scrolled near bottom (for short pages)
-            setTimeout(function() {
-                const scrollTop = window.pageYOffset || document.documentElement.scrollTop;
-                const windowHeight = window.innerHeight;
-                const documentHeight = document.documentElement.scrollHeight || document.body.scrollHeight;
-                const distanceFromBottom = documentHeight - (scrollTop + windowHeight);
-                
-                // If page is short and we're near bottom, try loading more
-                if (distanceFromBottom < 500 && bestDealScrollState.hasMore && !bestDealScrollState.isLoading) {
-                    console.log('Page is short, checking if we need to load more products');
-                    loadMoreBestDealProducts();
-                }
-            }, 500);
-        });
-
-        // Cart functionality is now handled by global cart handler in master.blade.php
-        // No need for duplicate event listeners here
-
-        $(document).on('click', '.wishlist-btn', function (e) {
-            e.preventDefault();
-            var btn = $(this);
-            var icon = btn.find('i.fa-heart');
-            var productId = btn.data('product-id');
-            $.ajax({
-                url: '/add-remove-wishlist/' + productId,
-                type: 'POST',
-                headers: { 'X-CSRF-TOKEN': $('meta[name="csrf-token"]').attr('content') },
-                success: function (response) {
-                    if (response.success) {
-                        icon.toggleClass('active');
-                        icon.toggleClass('fas far');
-                        if (typeof showToast === 'function') showToast(response.message, 'success');
-                    } else {
-                        if (typeof showToast === 'function') showToast(response.message || 'Failed to update wishlist', 'error');
-                    }
-                },
-                error: function() {
-                    if (typeof showToast === 'function') showToast('Error updating wishlist', 'error');
-                },
-                complete: function() {
-                    btn.prop('disabled', false);
-                }
-            });
-        });
-    </script>
-
+        } catch(err) {
+            console.error('Deal pagination error:', err);
+            window.location.href = targetUrl;
+        } finally {
+            if (loading) loading.classList.add('hidden');
+        }
+    };
+</script>
 @endpush
-
-
+@endsection

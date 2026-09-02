@@ -8,6 +8,7 @@
 </div>
 
 @include('ecommerce.components.footer')
+@include('ecommerce.components.quick-variation-modal')
 
 <!-- Scroll to Top Button -->
 <button id="scrollToTopBtn" class="scroll-to-top-btn" title="Scroll to top">

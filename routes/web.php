@@ -729,6 +729,7 @@ Route::post('/add-remove-wishlist/{productId}', [\App\Http\Controllers\Ecommerce
 Route::get('/api/products/most-sold', [\App\Http\Controllers\Ecommerce\ApiController::class, 'mostSoldProducts']);
 Route::get('/api/products/new-arrivals', [\App\Http\Controllers\Ecommerce\ApiController::class, 'newArrivalsProducts']);
 Route::get('/api/products/best-deals', [\App\Http\Controllers\Ecommerce\ApiController::class, 'bestDealsProducts']);
+Route::get('/api/products/{id}/quick-variation', [\App\Http\Controllers\Ecommerce\ApiController::class, 'getQuickVariation']);
 // Cart routes - require authentication (handled in controller)
 Route::post('/cart/add/{productId}', [App\Http\Controllers\Ecommerce\CartController::class, 'addToCartByCard'])->name('cart.addByCard');
 Route::post('/cart/add-page/{productId}', [App\Http\Controllers\Ecommerce\CartController::class, 'addToCartByPage'])->name('cart.addByPage');
