@@ -1,446 +1,180 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <meta name="csrf-token" content="{{ csrf_token() }}">
-    <title>Login - SISAL FASHION</title>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap" rel="stylesheet">
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
-    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css">
-    <style>
-        * {
-            margin: 0;
-            padding: 0;
-            box-sizing: border-box;
-        }
-        
-        body {
-            font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
-            background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);
-            min-height: 100vh;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-        }
-        
-    .login-page {
-        width: 100%;
-        max-width: 450px;
-        padding: 20px;
-    }
-    
-    .login-card {
-        background: white;
-        border-radius: 20px;
-        box-shadow: 0 20px 40px rgba(0, 0, 0, 0.1);
-        border: 1px solid #e9ecef;
-        max-width: 450px;
-        width: 100%;
-        padding: 50px 40px;
-        margin: 0 auto;
-    }
-    
-    .login-title {
-        text-align: center;
-        margin-bottom: 40px;
-    }
-    
-    .login-title h2 {
-        color: #333;
-        font-weight: 700;
-        margin-bottom: 15px;
-        font-size: 2rem;
-    }
-    
-    .login-title p {
-        color: #666;
-        margin: 0;
-        font-size: 1.1rem;
-    }
-    
-    .form-group {
-        margin-bottom: 25px;
-        position: relative;
-    }
-    
-    .form-control {
-        height: 55px;
-        border: 2px solid #e9ecef;
-        border-radius: 12px;
-        padding: 15px 20px;
-        font-size: 16px;
-        transition: all 0.3s ease;
-        background-color: #f8f9fa;
-        width: 100%;
-    }
-    
-    .form-control:focus {
-        border-color: #00512C;
-        box-shadow: 0 0 0 0.2rem rgba(0, 81, 44, 0.25);
-        background-color: white;
-        outline: none;
-    }
-    
-    .form-label {
-        display: block;
-        margin-bottom: 8px;
-        font-weight: 600;
-        color: #333;
-        font-size: 14px;
-    }
-    
-    .btn-login {
-        height: 55px;
-        background: linear-gradient(135deg, #00512C 0%, #0b7a4a 100%);
-        border: none;
-        border-radius: 12px;
-        font-weight: 600;
-        font-size: 16px;
-        transition: all 0.3s ease;
-        width: 100%;
-        position: relative;
-        overflow: hidden;
-        color: white;
-    }
-    
-    .btn-login:hover {
-        background: linear-gradient(135deg, #004124 0%, #00512C 100%);
-        transform: translateY(-2px);
-        box-shadow: 0 8px 25px rgba(0, 81, 44, 0.3);
-    }
-    
-    .btn-login:active {
-        transform: translateY(0);
-    }
-    
-    .btn-login:disabled {
-        opacity: 0.7;
-        cursor: not-allowed;
-        transform: none;
-    }
-    
-    .form-check-input {
-        width: 20px;
-        height: 20px;
-        border: 2px solid #dee2e6;
-        border-radius: 6px;
-        margin-top: 0;
-    }
-    
-    .form-check-input:checked {
-        background-color: #00512C;
-        border-color: #00512C;
-    }
-    
-    .form-check-label {
-        color: #666;
-        font-size: 15px;
-        margin-left: 8px;
-    }
-    
-    .forgot-password {
-        color: #00512C;
-        text-decoration: none;
-        font-size: 15px;
-        font-weight: 500;
-    }
-    
-    .forgot-password:hover {
-        color: #004124;
-        text-decoration: underline;
-    }
-    
-    .signup-link {
-        text-align: center;
-        margin-top: 30px;
-        color: #666;
-        font-size: 15px;
-    }
-    
-    .signup-link a {
-        color: #00512C;
-        text-decoration: none;
-        font-weight: 600;
-    }
-    
-    .signup-link a:hover {
-        color: #004124;
-        text-decoration: underline;
-    }
-    
-    .error-message {
-        background-color: #f8d7da;
-        border: 1px solid #f5c6cb;
-        color: #721c24;
-        padding: 12px 15px;
-        border-radius: 8px;
-        margin-top: 10px;
-        font-size: 14px;
-        display: flex;
-        align-items: center;
-    }
-    
-    .success-message {
-        background-color: #d4edda;
-        border: 1px solid #c3e6cb;
-        color: #155724;
-        padding: 15px;
-        border-radius: 8px;
-        margin-bottom: 25px;
-        font-size: 14px;
-        display: flex;
-        align-items: center;
-    }
-    
-    .loading-spinner {
-        display: inline-block;
-        width: 18px;
-        height: 18px;
-        border: 2px solid #ffffff;
-        border-radius: 50%;
-        border-top-color: transparent;
-        animation: spin 1s linear infinite;
-    }
-    
-    @keyframes spin {
-        to { transform: rotate(360deg); }
-    }
-    
-    .login-options {
-        display: flex;
-        justify-content: space-between;
-        align-items: center;
-        margin-bottom: 30px;
-    }
-    
-    @media (max-width: 768px) {
-        body {
-            align-items: flex-start;
-        }
-        
-        .login-page {
-            padding: 20px;
-            margin-top: 20px;
-        }
-        
-        .login-card {
-            padding: 30px 25px;
-            margin: 10px;
-            max-width: 100%;
-            border-radius: 15px;
-        }
-        
-        .login-title h2 {
-            font-size: 1.5rem;
-            margin-bottom: 10px;
-        }
-        
-        .login-title p {
-            font-size: 1rem;
-        }
-        
-        .form-control {
-            height: 50px;
-            font-size: 16px;
-            padding: 12px 18px;
-        }
-        
-        .form-label {
-            font-size: 13px;
-            margin-bottom: 6px;
-        }
-        
-        .btn-login {
-            height: 50px;
-            font-size: 15px;
-        }
-        
-        .login-options {
-            flex-direction: column;
-            gap: 15px;
-            align-items: flex-start;
-            margin-bottom: 25px;
-        }
-        
-        .form-check-label {
-            font-size: 14px;
-        }
-        
-        .forgot-password {
-            font-size: 14px;
-        }
-        
-        .signup-link {
-            font-size: 14px;
-            margin-top: 25px;
-        }
-    }
-    
-    @media (max-width: 480px) {
-        .login-page {
-            padding: 15px 0;
-        }
-        
-        .login-card {
-            padding: 25px 20px;
-            margin: 5px;
-            border-radius: 12px;
-        }
-        
-        .login-title h2 {
-            font-size: 1.4rem;
-        }
-        
-        .login-title p {
-            font-size: 0.95rem;
-        }
-        
-        .form-control {
-            height: 48px;
-            font-size: 15px;
-            padding: 10px 15px;
-        }
-        
-        .form-label {
-            font-size: 12px;
-            margin-bottom: 5px;
-        }
-        
-        .btn-login {
-            height: 48px;
-            font-size: 14px;
-        }
-        
-        .form-group {
-            margin-bottom: 20px;
-        }
-        
-        .login-options {
-            margin-bottom: 20px;
-        }
-    }
-    </style>
-</head>
-<body>
+@extends('layouts.guest')
 
-<!-- Login Section -->
-<div class="login-page">
-    <div class="login-card">
-        <!-- Title -->
-        <div class="login-title">
-            <h2>Welcome Back</h2>
-            <p>Sign in to your account to continue</p>
+@section('title', 'Sign In - Harosa Luxury Cosmetics')
+
+@section('content')
+<div class="w-full max-w-md">
+    <!-- Luxury Login Card -->
+    <div class="bg-white border border-stone-200/90 rounded-sm shadow-xl p-6 sm:p-10 relative overflow-hidden">
+        
+        <!-- Gold Accent Top Line -->
+        <div class="absolute top-0 left-0 right-0 h-1 bg-gradient-to-r from-[#a28e46] via-[#d4af37] to-[#8e7b39]"></div>
+
+        <!-- Header Content -->
+        <div class="text-center mb-7">
+            <div class="inline-flex items-center gap-1.5 bg-[#a28e46]/10 border border-[#a28e46]/30 text-[#8e7b39] px-3 py-1 text-[10px] font-bold uppercase tracking-widest rounded-full mb-3 shadow-2xs">
+                <i class="fa-solid fa-crown text-[9px]"></i>
+                <span>Client Sign In</span>
+            </div>
+            <h1 class="font-serif text-2xl sm:text-3xl font-bold text-stone-900 uppercase tracking-tight mb-1.5">
+                Welcome Back
+            </h1>
+            <p class="text-xs text-stone-500 font-light max-w-xs mx-auto">
+                Sign in to manage your orders, wishlist, and client profile.
+            </p>
         </div>
 
-        <!-- Session Status -->
+        <!-- Status Feedback -->
         @if (session('status'))
-            <div class="success-message">
-                <i class="fas fa-check-circle me-2"></i>
-                {{ session('status') }}
+            <div class="mb-5 p-3.5 bg-emerald-50 border border-emerald-200 text-emerald-800 rounded-sm text-xs font-medium flex items-center gap-2.5">
+                <i class="fa-solid fa-circle-check text-emerald-600 flex-shrink-0"></i>
+                <span>{{ session('status') }}</span>
+            </div>
+        @endif
+
+        @if (session('error'))
+            <div class="mb-5 p-3.5 bg-rose-50 border border-rose-200 text-rose-800 rounded-sm text-xs font-medium flex items-center gap-2.5">
+                <i class="fa-solid fa-circle-exclamation text-rose-600 flex-shrink-0"></i>
+                <span>{{ session('error') }}</span>
             </div>
         @endif
 
         <!-- Login Form -->
-        <form method="POST" action="{{ route('login') }}" id="loginForm">
+        <form method="POST" action="{{ route('login') }}" id="loginForm" class="space-y-4">
             @csrf
 
-            <!-- Email or Phone -->
-            <div class="form-group">
-                <label for="email" class="form-label">Email or Phone Number</label>
-                <input id="email" type="text" name="email" value="{{ old('email') }}" required autofocus autocomplete="username" 
-                       class="form-control" placeholder="Email address or phone number">
-                @error('email')
-                    <div class="error-message">
-                        <i class="fas fa-exclamation-circle me-2"></i>
-                        {{ $message }}
-                    </div>
-                @enderror
-            </div>
-
-            <!-- Password -->
-            <div class="form-group">
-                <label for="password" class="form-label">Password</label>
-                <input id="password" type="password" name="password" required autocomplete="current-password" 
-                       class="form-control" placeholder="Enter your password">
-                @error('password')
-                    <div class="error-message">
-                        <i class="fas fa-exclamation-circle me-2"></i>
-                        {{ $message }}
-                    </div>
-                @enderror
-            </div>
-
-            <!-- Remember Me & Forgot Password -->
-            <div class="login-options">
-                <div class="form-check">
-                    <input id="remember_me" type="checkbox" name="remember" class="form-check-input">
-                    <label for="remember_me" class="form-check-label">Remember me</label>
+            <!-- Email or Username Input -->
+            <div>
+                <label for="email" class="block text-[11px] font-bold text-stone-700 uppercase tracking-wider mb-1.5">
+                    Email or Phone Number <span class="text-rose-500">*</span>
+                </label>
+                <div class="relative w-full">
+                    <span class="input-icon-left">
+                        <i class="fa-regular fa-envelope"></i>
+                    </span>
+                    <input id="email" type="text" name="email" value="{{ old('email') }}" required autofocus autocomplete="username"
+                           placeholder="Enter your email or phone"
+                           style="padding-left: 40px !important; padding-right: 14px !important;"
+                           class="w-full py-2.5 text-xs sm:text-sm bg-stone-50/70 border @error('email') border-rose-400 bg-rose-50/30 @else border-stone-300 @enderror rounded-sm focus:border-[#a28e46] focus:bg-white focus:ring-1 focus:ring-[#a28e46]/30 focus:outline-none transition-all block">
                 </div>
-                @if (Route::has('password.request'))
-                    <a href="{{ route('password.request') }}" class="forgot-password">
-                        Forgot password?
-                    </a>
-                @endif
+                @error('email')
+                    <p class="text-xs text-rose-600 mt-1.5 font-medium flex items-center gap-1.5">
+                        <i class="fa-solid fa-circle-exclamation text-[11px]"></i>
+                        <span>{{ $message }}</span>
+                    </p>
+                @enderror
             </div>
 
-            <!-- Login Button -->
-            <button type="submit" class="btn btn-primary btn-login" id="loginBtn">
-                <i class="fas fa-sign-in-alt me-2"></i>
-                <span class="btn-text">Sign In</span>
-            </button>
+            <!-- Password Input -->
+            <div>
+                <div class="flex items-center justify-between mb-1.5">
+                    <label for="password" class="block text-[11px] font-bold text-stone-700 uppercase tracking-wider">
+                        Password <span class="text-rose-500">*</span>
+                    </label>
+                    @if (Route::has('password.request'))
+                        <a href="{{ route('password.request') }}" class="text-[11px] font-semibold text-[#a28e46] hover:text-[#8e7b39] transition-colors no-underline">
+                            Forgot password?
+                        </a>
+                    @endif
+                </div>
+                <div class="relative w-full">
+                    <span class="input-icon-left">
+                        <i class="fa-solid fa-lock"></i>
+                    </span>
+                    <input id="password" type="password" name="password" required autocomplete="current-password"
+                           placeholder="••••••••"
+                           style="padding-left: 40px !important; padding-right: 42px !important;"
+                           class="w-full py-2.5 text-xs sm:text-sm bg-stone-50/70 border @error('password') border-rose-400 bg-rose-50/30 @else border-stone-300 @enderror rounded-sm focus:border-[#a28e46] focus:bg-white focus:ring-1 focus:ring-[#a28e46]/30 focus:outline-none transition-all block">
+                    <button type="button" id="togglePasswordBtn" class="input-icon-right" aria-label="Toggle password visibility">
+                        <i class="fa-regular fa-eye" id="togglePasswordIcon"></i>
+                    </button>
+                </div>
+                @error('password')
+                    <p class="text-xs text-rose-600 mt-1.5 font-medium flex items-center gap-1.5">
+                        <i class="fa-solid fa-circle-exclamation text-[11px]"></i>
+                        <span>{{ $message }}</span>
+                    </p>
+                @enderror
+            </div>
+
+            <!-- Remember Me Option -->
+            <div class="flex items-center pt-1">
+                <label class="relative flex items-center gap-2 cursor-pointer select-none">
+                    <input id="remember_me" type="checkbox" name="remember" class="w-4 h-4 rounded border-stone-300 text-[#a28e46] focus:ring-[#a28e46]/30 cursor-pointer">
+                    <span class="text-xs text-stone-600 font-normal">Remember me on this device</span>
+                </label>
+            </div>
+
+            <!-- Submit Action Button -->
+            <div class="pt-2">
+                <button type="submit" id="loginBtn" class="w-full bg-[#a28e46] hover:bg-[#8e7b39] text-white font-bold text-xs uppercase tracking-widest py-3.5 px-6 rounded-sm shadow-md hover:shadow-lg transition-all duration-200 flex items-center justify-center gap-2 cursor-pointer focus:outline-none">
+                    <span id="loginBtnText">Sign In</span>
+                    <i class="fa-solid fa-arrow-right text-xs" id="loginBtnArrow"></i>
+                    <div id="loginSpinner" class="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin hidden"></div>
+                </button>
+            </div>
         </form>
 
-        <!-- Sign Up Link -->
-        <div class="signup-link">
-            Don't have an account? 
-            @if (Route::has('register'))
-                <a href="{{ route('register') }}">Sign up here</a>
-            @endif
-        </div>
+        <!-- Sign Up Footer Link -->
+        @if (Route::has('register'))
+            <div class="mt-8 pt-6 border-t border-stone-100 text-center">
+                <p class="text-xs text-stone-500 font-light">
+                    Don't have an account yet?
+                    <a href="{{ route('register') }}" class="font-bold text-[#a28e46] hover:text-[#8e7b39] transition-colors ml-1 uppercase tracking-wider no-underline">
+                        Register Here
+                    </a>
+                </p>
+            </div>
+        @endif
+
+    </div>
+
+    <!-- Guarantee / Security Badge -->
+    <div class="mt-6 flex items-center justify-center gap-2 text-[11px] text-stone-400 font-light text-center">
+        <i class="fa-solid fa-shield-halved text-[#a28e46] text-xs"></i>
+        <span>256-bit SSL encrypted connection & security guarantee</span>
     </div>
 </div>
+@endsection
 
+@push('scripts')
 <script>
-document.addEventListener('DOMContentLoaded', function() {
-    const form = document.getElementById('loginForm');
-    const loginBtn = document.getElementById('loginBtn');
-    const btnText = loginBtn.querySelector('.btn-text');
-    
-    // Add loading state to submit button
-    form.addEventListener('submit', function(e) {
-        // Show loading state immediately
-        loginBtn.disabled = true;
-        btnText.innerHTML = '<span class="loading-spinner me-2"></span>Signing In...';
+    document.addEventListener('DOMContentLoaded', function() {
+        // Show/Hide Password Toggle
+        const togglePasswordBtn = document.getElementById('togglePasswordBtn');
+        const passwordInput = document.getElementById('password');
+        const togglePasswordIcon = document.getElementById('togglePasswordIcon');
+
+        if (togglePasswordBtn && passwordInput && togglePasswordIcon) {
+            togglePasswordBtn.addEventListener('click', function() {
+                const isPassword = passwordInput.getAttribute('type') === 'password';
+                passwordInput.setAttribute('type', isPassword ? 'text' : 'password');
+                
+                if (isPassword) {
+                    togglePasswordIcon.classList.remove('fa-eye');
+                    togglePasswordIcon.classList.add('fa-eye-slash');
+                } else {
+                    togglePasswordIcon.classList.remove('fa-eye-slash');
+                    togglePasswordIcon.classList.add('fa-eye');
+                }
+            });
+        }
+
+        // Submit Button Loading State
+        const loginForm = document.getElementById('loginForm');
+        const loginBtn = document.getElementById('loginBtn');
+        const loginBtnText = document.getElementById('loginBtnText');
+        const loginBtnArrow = document.getElementById('loginBtnArrow');
+        const loginSpinner = document.getElementById('loginSpinner');
+
+        if (loginForm && loginBtn) {
+            loginForm.addEventListener('submit', function() {
+                loginBtn.disabled = true;
+                if (loginBtnText) loginBtnText.textContent = 'Signing in...';
+                if (loginBtnArrow) loginBtnArrow.classList.add('hidden');
+                if (loginSpinner) loginSpinner.classList.remove('hidden');
+            });
+        }
     });
-    
-    // Add focus effects to input fields
-    const inputs = document.querySelectorAll('.form-control');
-    inputs.forEach(input => {
-        input.addEventListener('focus', function() {
-            this.style.borderColor = '#00512C';
-            this.style.backgroundColor = 'white';
-        });
-        
-        input.addEventListener('blur', function() {
-            if (!this.value) {
-                this.style.borderColor = '#e9ecef';
-                this.style.backgroundColor = '#f8f9fa';
-            }
-        });
-    });
-    
-    // Add smooth animations to error messages
-    const errorMessages = document.querySelectorAll('.error-message');
-    errorMessages.forEach(msg => {
-        msg.style.opacity = '0';
-        
-        setTimeout(() => {
-            msg.style.transition = 'opacity 0.3s ease';
-            msg.style.opacity = '1';
-        }, 100);
-    });
-});
 </script>
-</body>
-</html>
+@endpush

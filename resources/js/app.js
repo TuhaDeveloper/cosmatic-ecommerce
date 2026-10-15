@@ -400,13 +400,14 @@ function renderHarosaProductCard(product) {
 
         return `
         <li class="splide__slide">
-            <div class="group relative bg-white border-0 overflow-hidden flex flex-col items-center text-center p-2 transition-all duration-300" data-href="/product/${product.slug}">
-                <div class="relative w-full aspect-[4/5] overflow-hidden bg-stone-50 mb-2.5 group/img">
+            <div class="group relative bg-white border border-stone-200/80 rounded-xl sm:rounded-sm overflow-hidden flex flex-col items-center text-center transition-all duration-300 hover:shadow-lg hover:border-[#a28e46]/40 h-full" data-href="/product/${product.slug}">
+                <!-- Full-Bleed Product Image Stage (Edge-to-Edge) -->
+                <div class="relative w-full aspect-[4/5] overflow-hidden bg-stone-100/50 group/img">
                     <!-- Black NEW Tag (top-left) -->
-                    <span class="absolute top-0 left-0 bg-[#222222] text-white text-[10px] font-bold px-2.5 py-0.5 rounded-none uppercase tracking-wider z-10">NEW</span>
+                    <span class="absolute top-2 left-2 bg-[#222222] text-white text-[10px] font-bold px-2 py-0.5 rounded-none uppercase tracking-wider z-10 shadow-xs">NEW</span>
                     
                     <!-- Black Discount Tag (top-right) -->
-                    ${discountPercent > 0 ? `<span class="absolute top-0 right-0 bg-[#222222] text-white text-[10px] font-bold px-2 py-0.5 rounded-none uppercase tracking-wider z-10">-${discountPercent}%</span>` : ''}
+                    ${discountPercent > 0 ? `<span class="absolute top-2 right-2 bg-[#222222] text-white text-[10px] font-bold px-2 py-0.5 rounded-none uppercase tracking-wider z-10 shadow-xs">-${discountPercent}%</span>` : ''}
                     
                     <!-- Main Product Image -->
                     <a href="/product/${product.slug}" class="block w-full h-full">
@@ -424,7 +425,7 @@ function renderHarosaProductCard(product) {
                     <!-- Desktop Hover Quick Add To Cart Button (Slides up on desktop hover) -->
                     <div class="hidden md:flex absolute inset-x-0 bottom-0 p-2.5 bg-gradient-to-t from-black/70 via-black/30 to-transparent translate-y-full group-hover/img:translate-y-0 transition-transform duration-300 items-center justify-center z-20">
                         <button type="button" 
-                                class="w-full bg-[#a28e46] hover:bg-[#8e7b39] text-white font-bold text-[11px] uppercase tracking-wider py-2 px-3 rounded-none shadow-md transition-all flex items-center justify-center gap-1.5 cursor-pointer focus:outline-none"
+                                class="w-full bg-[#a28e46] hover:bg-[#8e7b39] text-white font-bold text-[11px] uppercase tracking-wider py-2 px-3 rounded-none shadow transition-all flex items-center justify-center gap-1.5 cursor-pointer focus:outline-none"
                                 onclick="event.stopPropagation(); handleQuickAddToCart(${product.id}, ${hasVariations ? 'true' : 'false'}, '${product.slug}');">
                             <i class="fa-solid fa-cart-shopping text-[10px]"></i>
                             <span>ADD TO CART</span>
@@ -432,7 +433,7 @@ function renderHarosaProductCard(product) {
                     </div>
                 </div>
                 
-                <div class="w-full flex flex-col items-center text-center">
+                <div class="w-full flex flex-col items-center text-center p-3 mt-auto">
                     <!-- Category with Tag Icon -->
                     <div class="text-[11px] text-gray-400 flex items-center justify-center gap-1 mb-1 font-medium">
                         <i class="fa-solid fa-tag text-[9px] text-gray-400"></i>
@@ -440,7 +441,7 @@ function renderHarosaProductCard(product) {
                     </div>
                     
                     <!-- Serif Title -->
-                    <a href="/product/${product.slug}" class="font-serif text-xs md:text-sm font-bold text-gray-900 hover:text-[#a28e46] uppercase tracking-wider text-center block leading-tight line-clamp-1 no-underline transition-colors mb-1.5" title="${product.name}">
+                    <a href="/product/${product.slug}" class="font-serif text-xs md:text-sm font-bold text-gray-900 hover:text-[#a28e46] uppercase tracking-wider text-center block leading-tight line-clamp-1 no-underline transition-colors mb-1.5 w-full" title="${product.name}">
                         ${product.name}
                     </a>
                     
@@ -584,9 +585,9 @@ document.addEventListener('DOMContentLoaded', function () {
                 pagination: false,
                 arrows: true,
                 breakpoints: {
-                    1199: { perPage: 3 },
-                    767: { perPage: 2 },
-                    575: { perPage: 2 }
+                    1199: { perPage: 3, gap: '14px' },
+                    767: { perPage: 2, gap: '10px', arrows: false },
+                    575: { perPage: 2, gap: '8px', arrows: false }
                 }
             });
             catSplide.mount();
@@ -610,14 +611,14 @@ document.addEventListener('DOMContentLoaded', function () {
             if (!targetId) return;
 
             tabButtons.forEach(b => {
-                b.classList.remove('active', 'text-[#a28e46]');
-                b.classList.add('text-gray-400');
+                b.classList.remove('active', 'text-[#a28e46]', 'border-[#a28e46]');
+                b.classList.add('text-gray-400', 'border-transparent');
                 const dot = b.querySelector('.dot-indicator, span:first-child');
                 if (dot) dot.classList.replace('bg-[#a28e46]', 'bg-gray-300');
             });
 
-            this.classList.add('active', 'text-[#a28e46]');
-            this.classList.remove('text-gray-400');
+            this.classList.add('active', 'text-[#a28e46]', 'border-[#a28e46]');
+            this.classList.remove('text-gray-400', 'border-transparent');
             const activeDot = this.querySelector('.dot-indicator, span:first-child');
             if (activeDot) activeDot.classList.replace('bg-gray-300', 'bg-[#a28e46]');
 

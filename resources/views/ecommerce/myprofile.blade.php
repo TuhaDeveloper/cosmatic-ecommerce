@@ -1,451 +1,404 @@
 @extends('ecommerce.master')
 
+@section('title', 'My Account - Harosa Luxury Cosmetics')
+
 @section('main-section')
-<style>
-    .profile-page {
-        background: #f8f9fa;
-        min-height: 100vh;
-    }
-    
-    .profile-header {
-        background: white;
-        border-bottom: 1px solid #e9ecef;
-        padding: 2rem 20px; /* 20px left/right padding */
-        margin-bottom: 2rem;
-    }
-    
-    .profile-avatar {
-        width: 80px;
-        height: 80px;
-        border-radius: 50%;
-        object-fit: cover;
-        border: 3px solid #00512C;
-    }
-    
-    .card-simple {
-        background: white;
-        border: 1px solid #e9ecef;
-        border-radius: 8px;
-        box-shadow: 0 2px 4px rgba(0,0,0,0.05);
-        margin-bottom: 1.5rem;
-    }
-    
-    .card-header-simple {
-        background: #f8f9fa;
-        border-bottom: 1px solid #e9ecef;
-        padding: 1rem 1.5rem;
-        font-weight: 600;
-        color: #333;
-    }
-    
-    .card-body-simple {
-        padding: 1.5rem;
-    }
-    
-    .form-control-simple {
-        border: 1px solid #e2e8f0;
-        border-radius: 8px;
-        padding: 0.75rem 1rem;
-        font-size: 14px;
-        width: 100%;
-        transition: all 0.3s ease;
-        background: #fff;
-    }
-    
-    .form-control-simple:hover {
-        border-color: #cbd5e1;
-    }
-    
-    .form-control-simple:focus {
-        border-color: #00512C;
-        box-shadow: 0 0 0 0.2rem rgba(0, 81, 44, 0.25);
-        outline: none;
-    }
-    
-    .btn-simple {
-        background: #00512C;
-        border: 1px solid #00512C;
-        color: white;
-        padding: 0.75rem 2rem;
-        border-radius: 8px;
-        font-size: 14px;
-        font-weight: 600;
-        transition: all 0.3s ease;
-    }
-    
-    .btn-simple:hover {
-        background: #004124;
-        border-color: #004124;
-        color: white;
-        transform: translateY(-1px);
-        box-shadow: 0 4px 12px rgba(0, 81, 44, 0.3);
-    }
-    
-    .btn-outline-simple {
-        background: transparent;
-        border: 1px solid #6c757d;
-        color: #6c757d;
-        padding: 0.5rem 1rem;
-        border-radius: 4px;
-        font-size: 14px;
-    }
-    
-    .btn-outline-simple:hover {
-        background: #6c757d;
-        color: white;
-    }
+<div class="bg-stone-50/60 min-h-screen pb-16 sm:pb-20">
 
-    /* Action buttons on orders row */
-    .btn-view {
-        background: #ffffff;
-        color: #374151;
-        border: 1px solid #e5e7eb;
-        padding: 0.5rem 0.9rem;
-        border-radius: 8px;
-        font-weight: 600;
-    }
-    .btn-view:hover {
-        background: #f3f4f6;
-        border-color: #d1d5db;
-    }
-    .btn-cancel {
-        background: #ffffff;
-        color: #6b7280;
-        border: 1px solid #d1d5db;
-        padding: 0.5rem 0.9rem;
-        border-radius: 8px;
-        font-weight: 600;
-    }
-    .btn-cancel:hover { background: #f9fafb; }
-    .btn-delete-strong { background: #ef4444; color: #fff; border: 1px solid #ef4444; padding: 0.5rem 0.9rem; border-radius: 8px; font-weight: 700; }
-    .btn-delete-strong:hover { background: #dc2626; border-color: #dc2626; }
+    <!-- 1. Editorial Hero Header -->
+    <div class="bg-gradient-to-r from-[#111111] via-[#1c1917] to-[#262013] text-white py-8 sm:py-14 relative overflow-hidden border-b border-[#a28e46]/30">
+        <!-- Ambient Blur Glows -->
+        <div class="absolute -top-24 -right-24 w-72 sm:w-96 h-72 sm:h-96 bg-[#a28e46]/15 rounded-full blur-3xl pointer-events-none"></div>
+        <div class="absolute -bottom-24 -left-24 w-64 sm:w-80 h-64 sm:h-80 bg-[#a28e46]/10 rounded-full blur-2xl pointer-events-none"></div>
 
-    /* Ensure modals overlay everything on this page */
-    /* Force highest stacking to fix backdrop under header issue */
-    .modal.show { z-index: 4010 !important; }
-    .modal-backdrop.show { z-index: 4000 !important; }
-    
-    .form-label-simple {
-        font-weight: 600;
-        color: #374151;
-        margin-bottom: 0.5rem;
-        font-size: 14px;
-        display: block;
-    }
-    
-    .nav-tabs-simple {
-        border: none;
-        background: #f8f9fa;
-    }
-    
-    .nav-tabs-simple .nav-link {
-        border: none;
-        color: #6c757d;
-        font-weight: 500;
-        padding: 1rem 1.5rem;
-        background: transparent;
-    }
-    
-    .nav-tabs-simple .nav-link:hover {
-        color: #00512C;
-        background: rgba(0, 81, 44, 0.1);
-    }
-    
-    .nav-tabs-simple .nav-link.active {
-        color: #00512C;
-        background: white;
-        border-bottom: 2px solid #00512C;
-    }
-    
-    .order-card-simple {
-        background: white;
-        border: 1px solid #e9ecef;
-        border-radius: 8px;
-        padding: 1rem;
-        margin-bottom: 1rem;
-    }
-    
-    /* Order item styling improvements */
-    .order-item {
-        gap: 0.75rem;
-        border: 1px solid #eef2f7;
-        background: #f9fafb;
-    }
-    .order-item:hover {
-        background: #f3f4f6;
-        border-color: #e5e7eb;
-    }
-    .order-thumb {
-        width: 48px;
-        height: 48px;
-        object-fit: cover;
-        border-radius: 6px;
-        box-shadow: 0 1px 2px rgba(0,0,0,0.06);
-    }
-    
-    .text-muted-simple {
-        color: #6c757d;
-        font-size: 13px;
-    }
-    
-    /* Form Section Styling */
-    .form-section {
-        background: #f8fafc;
-        border: 1px solid #e2e8f0;
-        border-radius: 12px;
-        padding: 1.5rem;
-        margin-bottom: 1rem;
-    }
-    
-    .form-section-title {
-        color: #00512C;
-        font-weight: 700;
-        font-size: 16px;
-        margin-bottom: 1.5rem;
-        padding-bottom: 0.5rem;
-        border-bottom: 2px solid #e2e8f0;
-    }
-    
-    .form-group {
-        margin-bottom: 1rem;
-    }
-    
-    .form-group:last-child {
-        margin-bottom: 0;
-    }
-    
-    /* Improved spacing and alignment */
-    .row.g-4 > * {
-        padding: 0.75rem;
-    }
-    
-    .row.g-3 > * {
-        padding: 0.5rem;
-    }
-    
-    /* Better visual hierarchy */
-    .card-body-simple {
-        padding: 2rem;
-    }
-    
-    /* Enhanced card styling */
-    .card-simple {
-        border: 1px solid #e2e8f0;
-        border-radius: 12px;
-        box-shadow: 0 4px 6px rgba(0, 0, 0, 0.05);
-    }
-    
-    /* Profile header improvements */
-    .profile-header {
-        background: linear-gradient(135deg, #f8fafc 0%, #e2e8f0 100%);
-        border-bottom: 1px solid #e2e8f0;
-        padding: 2.5rem 20px; /* 20px left/right padding */
-        margin-bottom: 2rem;
-    }
-    
-    .btn-delete {
-        background: #dc2626;
-        border: 1px solid #dc2626;
-        color: white;
-        padding: 0.25rem 0.75rem;
-        border-radius: 6px;
-        font-size: 0.8rem;
-        font-weight: 600;
-        transition: all 0.3s ease;
-        text-decoration: none;
-        display: inline-flex;
-        align-items: center;
-        gap: 0.25rem;
-    }
-    
-    .btn-delete:hover {
-        background: #b91c1c;
-        border-color: #b91c1c;
-        color: white;
-        transform: translateY(-1px);
-        box-shadow: 0 4px 12px rgba(220, 38, 38, 0.3);
-    }
-    
-    .btn-delete:disabled {
-        background: #9ca3af;
-        border-color: #9ca3af;
-        cursor: not-allowed;
-        transform: none;
-        box-shadow: none;
-    }
-    
-    /* Fix Bootstrap badge positioning inside order cards (override global .badge) */
-    .order-card-simple .badge {
-        position: static;
-        top: auto;
-        right: auto;
-        min-width: auto;
-        height: auto;
-        border-radius: 0.375rem;
-        padding: 0.35rem 0.6rem;
-        line-height: 1;
-        display: inline-block;
-    }
-</style>
+        <div class="container mx-auto px-4 max-w-7xl relative z-10">
+            <div class="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-6">
+                
+                <!-- Left: Avatar & User Info -->
+                <div class="flex items-center gap-3.5 sm:gap-6">
+                    <!-- Avatar with Verified Badge -->
+                    <div class="relative flex-shrink-0 w-16 h-16 sm:w-20 sm:h-20">
+                        @php
+                            $userInitials = strtoupper(substr($user->first_name ?? 'U', 0, 1) . substr($user->last_name ?? '', 0, 1));
+                        @endphp
+                        @if(!empty($user->avatar))
+                            <img src="{{ $user->avatar }}" alt="{{ $user->first_name }}" class="w-full h-full rounded-full object-cover ring-2 ring-[#a28e46] ring-offset-2 ring-offset-[#1c1917] shadow-lg">
+                        @else
+                            <div class="w-full h-full rounded-full bg-gradient-to-br from-[#a28e46] to-[#6d5d28] ring-2 ring-[#a28e46] ring-offset-2 ring-offset-[#1c1917] shadow-lg flex items-center justify-center text-white font-serif font-bold text-lg sm:text-2xl tracking-wider">
+                                {{ $userInitials ?: 'TM' }}
+                            </div>
+                        @endif
+                        <span class="absolute bottom-0 right-0 bg-[#a28e46] text-white w-5 h-5 sm:w-6 sm:h-6 rounded-full flex items-center justify-center text-[9px] sm:text-[10px] shadow-sm border-2 border-[#1c1917]" title="Verified Client">
+                            <i class="fa-solid fa-check"></i>
+                        </span>
+                    </div>
 
-<div class="container py-4">
-    <!-- Simple Profile Header -->
-    <div class="profile-header">
-        <div class="row align-items-center">
-            <div class="col-md-8">
-                <div class="d-flex align-items-center">
-                    <img src="{{ $user->avatar ?? 'https://ui-avatars.com/api/?name=' . urlencode($user->first_name . ' ' . $user->last_name) . '&background=00512C&color=fff&size=80' }}" 
-                         alt="Profile Avatar" class="profile-avatar me-3">
-                    <div>
-                        <h3 class="mb-1">{{$user->first_name}} {{$user->last_name}}</h3>
-                        <p class="mb-1 text-muted-simple">{{$user->email}}</p>
-                        <small class="text-muted-simple">Member since {{ $user->created_at->format('M Y') }} • {{ $allOrders->count() }} Orders</small>
+                    <!-- User Name & Meta -->
+                    <div class="min-w-0 flex-1">
+                        <div class="inline-flex items-center gap-1.5 bg-[#a28e46]/20 border border-[#a28e46]/40 text-[#d4af37] px-2.5 py-0.5 text-[9px] sm:text-[10px] font-bold uppercase tracking-widest rounded-full mb-1 sm:mb-1.5 shadow-xs">
+                            <i class="fa-solid fa-crown text-[8px] sm:text-[9px]"></i>
+                            <span>Harosa Member</span>
+                        </div>
+                        <h1 class="font-serif text-xl sm:text-3xl lg:text-4xl font-bold tracking-tight text-white uppercase truncate mb-1">
+                            {{ $user->first_name }} {{ $user->last_name }}
+                        </h1>
+                        <div class="flex flex-col sm:flex-row sm:items-center gap-1 sm:gap-3 text-xs text-stone-300 font-light">
+                            <span class="flex items-center gap-1.5 truncate">
+                                <i class="fa-regular fa-envelope text-[#a28e46] text-xs flex-shrink-0"></i>
+                                <span class="truncate">{{ $user->email }}</span>
+                            </span>
+                            <span class="text-stone-600 hidden sm:inline">•</span>
+                            <span class="flex items-center gap-1.5 text-stone-400">
+                                <i class="fa-regular fa-calendar text-[#a28e46] text-xs flex-shrink-0"></i>
+                                <span>Member since {{ $user->created_at ? $user->created_at->format('M Y') : 'Recent' }}</span>
+                            </span>
+                        </div>
                     </div>
                 </div>
-            </div>
-            <div class="col-md-4 text-md-end mt-2 mt-md-0">
-                <small class="text-muted-simple">{{ $allOrders->where('status', 'delivered')->count() }} delivered orders</small>
+
+                <!-- Right: Quick Stat Chips & Breadcrumbs -->
+                <div class="flex flex-col sm:flex-row lg:flex-col lg:items-end justify-between sm:items-center gap-3 pt-2 sm:pt-0 border-t border-white/10 lg:border-t-0">
+                    <div class="grid grid-cols-2 gap-2.5 sm:gap-3 w-full sm:w-auto">
+                        <div class="bg-white/5 backdrop-blur-sm border border-white/10 rounded-sm px-3.5 py-2 text-center min-w-[90px] sm:min-w-[105px]">
+                            <span class="block font-serif text-base sm:text-lg font-bold text-[#d4af37] leading-tight">{{ $allOrders->count() }}</span>
+                            <span class="text-[9px] sm:text-[10px] text-stone-400 uppercase tracking-wider font-semibold">Total Orders</span>
+                        </div>
+                        <div class="bg-white/5 backdrop-blur-sm border border-white/10 rounded-sm px-3.5 py-2 text-center min-w-[90px] sm:min-w-[105px]">
+                            <span class="block font-serif text-base sm:text-lg font-bold text-emerald-400 leading-tight">{{ $allOrders->where('status', 'delivered')->count() }}</span>
+                            <span class="text-[9px] sm:text-[10px] text-stone-400 uppercase tracking-wider font-semibold">Delivered</span>
+                        </div>
+                    </div>
+                    <div class="flex items-center gap-3">
+                        <nav class="flex items-center gap-2 text-xs text-stone-400" aria-label="Breadcrumb">
+                            <a href="/" class="hover:text-[#a28e46] transition-colors no-underline text-stone-400">Home</a>
+                            <span class="text-stone-600">/</span>
+                            <span class="text-white font-medium">My Account</span>
+                        </nav>
+                        <form method="POST" action="{{ route('logout') }}" class="m-0">
+                            @csrf
+                            <button type="submit" class="inline-flex items-center gap-1.5 px-3 py-1.5 bg-white/10 hover:bg-rose-600/90 text-stone-200 hover:text-white border border-white/20 hover:border-rose-500 rounded-sm text-[11px] font-semibold uppercase tracking-wider transition-all duration-200 cursor-pointer shadow-xs">
+                                <i class="fa-solid fa-right-from-bracket text-[10px]"></i>
+                                <span>Logout</span>
+                            </button>
+                        </form>
+                    </div>
+                </div>
             </div>
         </div>
     </div>
 
-        <!-- Simple Tab Navigation -->
-        <div class="card-simple">
-            <div class="card-header p-0">
-                <ul class="nav nav-tabs-simple nav-fill" id="profileTabs" role="tablist">
-                    <li class="nav-item" role="presentation">
-                        <button class="nav-link {{ request()->get('tab') == 'profile' || !request()->has('tab') ? 'active' : '' }}" id="profile-tab" data-bs-toggle="tab" data-bs-target="#profile"
-                            type="button" role="tab" aria-controls="profile" aria-selected="{{ request()->get('tab') == 'profile' || !request()->has('tab') ? 'true' : 'false' }}">
-                            My Profile
+    <!-- 2. Main Content Container -->
+    <div class="container mx-auto px-3.5 sm:px-4 max-w-7xl -mt-4 sm:-mt-8 relative z-20">
+        
+        <!-- Feedback Alerts -->
+        @if (session('status') === 'profile-updated')
+            <div class="mb-4 sm:mb-6 p-3.5 sm:p-4 bg-emerald-50 border border-emerald-200 text-emerald-800 rounded-sm text-xs font-medium flex items-center justify-between shadow-sm">
+                <div class="flex items-center gap-2.5">
+                    <i class="fa-solid fa-circle-check text-emerald-600 text-sm flex-shrink-0"></i>
+                    <span>Your profile details have been successfully updated.</span>
+                </div>
+                <button type="button" onclick="this.parentElement.remove()" class="text-emerald-500 hover:text-emerald-700 p-1">
+                    <i class="fa-solid fa-xmark"></i>
+                </button>
+            </div>
+        @elseif (session('status') === 'password-updated')
+            <div class="mb-4 sm:mb-6 p-3.5 sm:p-4 bg-emerald-50 border border-emerald-200 text-emerald-800 rounded-sm text-xs font-medium flex items-center justify-between shadow-sm">
+                <div class="flex items-center gap-2.5">
+                    <i class="fa-solid fa-shield-check text-emerald-600 text-sm flex-shrink-0"></i>
+                    <span>Your password has been changed successfully.</span>
+                </div>
+                <button type="button" onclick="this.parentElement.remove()" class="text-emerald-500 hover:text-emerald-700 p-1">
+                    <i class="fa-solid fa-xmark"></i>
+                </button>
+            </div>
+        @elseif (session('error'))
+            <div class="mb-4 sm:mb-6 p-3.5 sm:p-4 bg-rose-50 border border-rose-200 text-rose-800 rounded-sm text-xs font-medium flex items-center justify-between shadow-sm">
+                <div class="flex items-center gap-2.5">
+                    <i class="fa-solid fa-circle-exclamation text-rose-600 text-sm flex-shrink-0"></i>
+                    <span>{{ session('error') }}</span>
+                </div>
+                <button type="button" onclick="this.parentElement.remove()" class="text-rose-500 hover:text-rose-700 p-1">
+                    <i class="fa-solid fa-xmark"></i>
+                </button>
+            </div>
+        @elseif (session('success'))
+            <div class="mb-4 sm:mb-6 p-3.5 sm:p-4 bg-emerald-50 border border-emerald-200 text-emerald-800 rounded-sm text-xs font-medium flex items-center justify-between shadow-sm">
+                <div class="flex items-center gap-2.5">
+                    <i class="fa-solid fa-circle-check text-emerald-600 text-sm flex-shrink-0"></i>
+                    <span>{{ session('success') }}</span>
+                </div>
+                <button type="button" onclick="this.parentElement.remove()" class="text-emerald-500 hover:text-emerald-700 p-1">
+                    <i class="fa-solid fa-xmark"></i>
+                </button>
+            </div>
+        @endif
+
+        @if ($errors->any())
+            <div class="mb-4 sm:mb-6 p-3.5 sm:p-4 bg-rose-50 border border-rose-200 text-rose-800 rounded-sm text-xs font-medium shadow-sm">
+                <div class="flex items-center gap-2.5 mb-2 font-bold">
+                    <i class="fa-solid fa-circle-exclamation text-rose-600 text-sm flex-shrink-0"></i>
+                    <span>Please correct the errors below:</span>
+                </div>
+                <ul class="list-disc list-inside space-y-1 text-rose-700 pl-2">
+                    @foreach ($errors->all() as $error)
+                        <li>{{ $error }}</li>
+                    @endforeach
+                </ul>
+            </div>
+        @endif
+
+        <!-- Card Wrapper with Luxury Tab Navigation -->
+        <div class="bg-white border border-stone-200/90 rounded-sm shadow-sm overflow-hidden">
+            
+            <!-- Luxury Tab Bar (3-Column Grid Responsive) -->
+            <div class="border-b border-stone-200 bg-[#faf8f5]">
+                <ul class="grid grid-cols-3 text-center font-serif text-[11px] sm:text-xs font-bold uppercase tracking-wider" id="profileTabs" role="tablist">
+                    <li role="presentation">
+                        <button class="w-full py-3.5 sm:py-4 px-1.5 sm:px-4 transition-all duration-200 flex flex-col sm:flex-row items-center justify-center gap-1 sm:gap-2 border-b-2 cursor-pointer focus:outline-none {{ request()->get('tab') == 'profile' || !request()->has('tab') ? 'border-[#a28e46] text-[#a28e46] bg-white font-bold shadow-xs' : 'border-transparent text-stone-500 hover:text-[#a28e46] hover:bg-stone-100/50 font-semibold' }}"
+                                id="profile-tab" data-bs-toggle="tab" data-bs-target="#profile" type="button" role="tab" aria-controls="profile" aria-selected="{{ request()->get('tab') == 'profile' || !request()->has('tab') ? 'true' : 'false' }}">
+                            <i class="fa-solid fa-user text-xs"></i>
+                            <span class="leading-tight">My Profile</span>
                         </button>
                     </li>
-                    <li class="nav-item" role="presentation">
-                        <button class="nav-link {{ request()->get('tab') == 'security' ? 'active' : '' }}" id="security-tab" data-bs-toggle="tab" data-bs-target="#security"
-                            type="button" role="tab" aria-controls="security" aria-selected="{{ request()->get('tab') == 'security' ? 'true' : 'false' }}">
-                            Security
+                    <li role="presentation">
+                        <button class="w-full py-3.5 sm:py-4 px-1.5 sm:px-4 transition-all duration-200 flex flex-col sm:flex-row items-center justify-center gap-1 sm:gap-2 border-b-2 cursor-pointer focus:outline-none {{ request()->get('tab') == 'security' ? 'border-[#a28e46] text-[#a28e46] bg-white font-bold shadow-xs' : 'border-transparent text-stone-500 hover:text-[#a28e46] hover:bg-stone-100/50 font-semibold' }}"
+                                id="security-tab" data-bs-toggle="tab" data-bs-target="#security" type="button" role="tab" aria-controls="security" aria-selected="{{ request()->get('tab') == 'security' ? 'true' : 'false' }}">
+                            <i class="fa-solid fa-shield-halved text-xs"></i>
+                            <span class="leading-tight">Security</span>
                         </button>
                     </li>
-                    <li class="nav-item" role="presentation">
-                        <button class="nav-link {{ request()->get('tab') == 'orders' ? 'active' : '' }}" id="orders-tab" data-bs-toggle="tab" data-bs-target="#orders" type="button"
-                            role="tab" aria-controls="orders" aria-selected="{{ request()->get('tab') == 'orders' ? 'true' : 'false' }}">
-                            My Orders
+                    <li role="presentation">
+                        <button class="w-full py-3.5 sm:py-4 px-1.5 sm:px-4 transition-all duration-200 flex flex-col sm:flex-row items-center justify-center gap-1 sm:gap-2 border-b-2 cursor-pointer focus:outline-none {{ request()->get('tab') == 'orders' ? 'border-[#a28e46] text-[#a28e46] bg-white font-bold shadow-xs' : 'border-transparent text-stone-500 hover:text-[#a28e46] hover:bg-stone-100/50 font-semibold' }}"
+                                id="orders-tab" data-bs-toggle="tab" data-bs-target="#orders" type="button" role="tab" aria-controls="orders" aria-selected="{{ request()->get('tab') == 'orders' ? 'true' : 'false' }}">
+                            <div class="flex items-center gap-1.5">
+                                <i class="fa-solid fa-bag-shopping text-xs"></i>
+                                <span class="leading-tight">My Orders</span>
+                            </div>
+                            <span class="px-1.5 py-0.2 rounded-full text-[9px] sm:text-[10px] font-sans {{ request()->get('tab') == 'orders' ? 'bg-[#a28e46] text-white' : 'bg-stone-200 text-stone-700' }}">
+                                {{ $allOrders->count() }}
+                            </span>
                         </button>
                     </li>
                 </ul>
             </div>
 
-            <!-- Tab Content -->
-            <div class="card-body-simple">
+            <!-- Tab Content Panes -->
+            <div class="p-4 sm:p-8 lg:p-10">
                 <div class="tab-content" id="profileTabContent">
-                    <!-- My Profile Tab -->
+
+                    <!-- ───────────────────────────────────────────────
+                         TAB 1: MY PROFILE
+                    ─────────────────────────────────────────────── -->
                     <div class="tab-pane fade {{ request()->get('tab') == 'profile' || !request()->has('tab') ? 'show active' : '' }}" id="profile" role="tabpanel" aria-labelledby="profile-tab">
-                        <form class="row g-4" action="{{ route('profile.update') }}" method="POST">
+                        <form action="{{ route('profile.update') }}" method="POST">
                             @csrf
                             @method('PATCH')
-                            <div class="col-lg-6">
-                                <div class="form-section">
-                                    <h6 class="form-section-title">Personal Information</h6>
-                                    <div class="row g-3">
-                                        <div class="col-md-6">
-                                            <div class="form-group">
-                                                <label for="firstName" class="form-label-simple">First Name</label>
-                                                <input type="text" class="form-control-simple" id="firstName" name="first_name" value="{{ auth()->user()->first_name }}">
+
+                            <div class="grid grid-cols-1 lg:grid-cols-2 gap-6 lg:gap-8 items-start">
+                                
+                                <!-- Personal Information Column -->
+                                <div class="bg-stone-50/70 border border-stone-200/90 rounded-sm p-4 sm:p-7 shadow-xs">
+                                    <div class="flex items-center gap-3 pb-3.5 sm:pb-4 mb-4 sm:mb-5 border-b border-stone-200/80">
+                                        <div class="w-8 h-8 sm:w-9 sm:h-9 rounded-full bg-[#faf7f0] border border-[#a28e46]/30 text-[#a28e46] flex items-center justify-center text-xs sm:text-sm shadow-xs flex-shrink-0">
+                                            <i class="fa-solid fa-id-card"></i>
+                                        </div>
+                                        <div>
+                                            <h2 class="font-serif font-bold text-xs sm:text-sm uppercase tracking-wider text-stone-900 leading-tight">
+                                                Personal Information
+                                            </h2>
+                                            <p class="text-[10px] sm:text-[11px] text-stone-500">Manage your name and primary contact info</p>
+                                        </div>
+                                    </div>
+
+                                    <div class="space-y-3.5 sm:space-y-4">
+                                        <div class="grid grid-cols-1 sm:grid-cols-2 gap-3.5 sm:gap-4">
+                                            <div>
+                                                <label for="firstName" class="block text-[11px] font-bold text-stone-700 uppercase tracking-wider mb-1">
+                                                    First Name <span class="text-rose-500">*</span>
+                                                </label>
+                                                <input type="text" id="firstName" name="first_name" value="{{ old('first_name', auth()->user()->first_name) }}" required
+                                                       class="w-full px-3.5 py-2.5 text-xs sm:text-sm bg-white border border-stone-300 rounded-sm focus:border-[#a28e46] focus:ring-1 focus:ring-[#a28e46]/30 focus:outline-none transition-colors">
+                                            </div>
+                                            <div>
+                                                <label for="lastName" class="block text-[11px] font-bold text-stone-700 uppercase tracking-wider mb-1">
+                                                    Last Name <span class="text-rose-500">*</span>
+                                                </label>
+                                                <input type="text" id="lastName" name="last_name" value="{{ old('last_name', auth()->user()->last_name) }}" required
+                                                       class="w-full px-3.5 py-2.5 text-xs sm:text-sm bg-white border border-stone-300 rounded-sm focus:border-[#a28e46] focus:ring-1 focus:ring-[#a28e46]/30 focus:outline-none transition-colors">
                                             </div>
                                         </div>
-                                        <div class="col-md-6">
-                                            <div class="form-group">
-                                                <label for="lastName" class="form-label-simple">Last Name</label>
-                                                <input type="text" class="form-control-simple" id="lastName" name="last_name" value="{{ auth()->user()->last_name }}">
+
+                                        <div>
+                                            <label for="email" class="block text-[11px] font-bold text-stone-700 uppercase tracking-wider mb-1">
+                                                Email Address <span class="text-rose-500">*</span>
+                                            </label>
+                                            <input type="email" id="email" name="email" value="{{ old('email', auth()->user()->email) }}" required
+                                                   class="w-full px-3.5 py-2.5 text-xs sm:text-sm bg-white border border-stone-300 rounded-sm focus:border-[#a28e46] focus:ring-1 focus:ring-[#a28e46]/30 focus:outline-none transition-colors">
+                                            <span class="text-[10px] sm:text-[11px] text-stone-400 mt-1 block">Used for order receipts and account verification.</span>
+                                        </div>
+
+                                        <div>
+                                            <label for="phone" class="block text-[11px] font-bold text-stone-700 uppercase tracking-wider mb-1">
+                                                Phone Number
+                                            </label>
+                                            <input type="tel" id="phone" name="phone" value="{{ old('phone', optional(auth()->user()->customer)->phone) }}" placeholder="+880 1700-000000"
+                                                   class="w-full px-3.5 py-2.5 text-xs sm:text-sm bg-white border border-stone-300 rounded-sm focus:border-[#a28e46] focus:ring-1 focus:ring-[#a28e46]/30 focus:outline-none transition-colors">
+                                            <span class="text-[10px] sm:text-[11px] text-stone-400 mt-1 block">For delivery coordination and order updates.</span>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <!-- Address Information Column -->
+                                <div class="bg-stone-50/70 border border-stone-200/90 rounded-sm p-4 sm:p-7 shadow-xs">
+                                    <div class="flex items-center gap-3 pb-3.5 sm:pb-4 mb-4 sm:mb-5 border-b border-stone-200/80">
+                                        <div class="w-8 h-8 sm:w-9 sm:h-9 rounded-full bg-[#faf7f0] border border-[#a28e46]/30 text-[#a28e46] flex items-center justify-center text-xs sm:text-sm shadow-xs flex-shrink-0">
+                                            <i class="fa-solid fa-location-dot"></i>
+                                        </div>
+                                        <div>
+                                            <h2 class="font-serif font-bold text-xs sm:text-sm uppercase tracking-wider text-stone-900 leading-tight">
+                                                Address Information
+                                            </h2>
+                                            <p class="text-[10px] sm:text-[11px] text-stone-500">Default shipping & delivery destination</p>
+                                        </div>
+                                    </div>
+
+                                    <div class="space-y-3.5 sm:space-y-4">
+                                        <div>
+                                            <label for="street" class="block text-[11px] font-bold text-stone-700 uppercase tracking-wider mb-1">
+                                                Street Address
+                                            </label>
+                                            <input type="text" id="street" name="address_1" value="{{ old('address_1', optional(auth()->user()->customer)->address_1) }}" placeholder="House #, Road #, Area"
+                                                   class="w-full px-3.5 py-2.5 text-xs sm:text-sm bg-white border border-stone-300 rounded-sm focus:border-[#a28e46] focus:ring-1 focus:ring-[#a28e46]/30 focus:outline-none transition-colors">
+                                        </div>
+
+                                        <div>
+                                            <label for="address_2" class="block text-[11px] font-bold text-stone-700 uppercase tracking-wider mb-1">
+                                                Address Line 2 <span class="text-stone-400 font-normal">(Optional)</span>
+                                            </label>
+                                            <input type="text" id="address_2" name="address_2" value="{{ old('address_2', optional(auth()->user()->customer)->address_2) }}" placeholder="Apartment, suite, unit, floor, etc."
+                                                   class="w-full px-3.5 py-2.5 text-xs sm:text-sm bg-white border border-stone-300 rounded-sm focus:border-[#a28e46] focus:ring-1 focus:ring-[#a28e46]/30 focus:outline-none transition-colors">
+                                        </div>
+
+                                        <div class="grid grid-cols-1 sm:grid-cols-2 gap-3.5 sm:gap-4">
+                                            <div>
+                                                <label for="city" class="block text-[11px] font-bold text-stone-700 uppercase tracking-wider mb-1">
+                                                    City
+                                                </label>
+                                                <input type="text" id="city" name="city" value="{{ old('city', optional(auth()->user()->customer)->city) }}" placeholder="e.g. Dhaka"
+                                                       class="w-full px-3.5 py-2.5 text-xs sm:text-sm bg-white border border-stone-300 rounded-sm focus:border-[#a28e46] focus:ring-1 focus:ring-[#a28e46]/30 focus:outline-none transition-colors">
+                                            </div>
+                                            <div>
+                                                <label for="state" class="block text-[11px] font-bold text-stone-700 uppercase tracking-wider mb-1">
+                                                    State / Division
+                                                </label>
+                                                <input type="text" id="state" name="state" value="{{ old('state', optional(auth()->user()->customer)->state) }}" placeholder="e.g. Dhaka Division"
+                                                       class="w-full px-3.5 py-2.5 text-xs sm:text-sm bg-white border border-stone-300 rounded-sm focus:border-[#a28e46] focus:ring-1 focus:ring-[#a28e46]/30 focus:outline-none transition-colors">
                                             </div>
                                         </div>
-                                        <div class="col-12">
-                                            <div class="form-group">
-                                                <label for="email" class="form-label-simple">Email Address</label>
-                                                <input type="email" class="form-control-simple" id="email" name="email" value="{{ auth()->user()->email }}">
+
+                                        <div class="grid grid-cols-1 sm:grid-cols-2 gap-3.5 sm:gap-4">
+                                            <div>
+                                                <label for="zip" class="block text-[11px] font-bold text-stone-700 uppercase tracking-wider mb-1">
+                                                    ZIP / Postal Code
+                                                </label>
+                                                <input type="text" id="zip" name="zip_code" value="{{ old('zip_code', optional(auth()->user()->customer)->zip_code) }}" placeholder="e.g. 1212"
+                                                       class="w-full px-3.5 py-2.5 text-xs sm:text-sm bg-white border border-stone-300 rounded-sm focus:border-[#a28e46] focus:ring-1 focus:ring-[#a28e46]/30 focus:outline-none transition-colors">
                                             </div>
-                                        </div>
-                                        <div class="col-12">
-                                            <div class="form-group">
-                                                <label for="phone" class="form-label-simple">Phone Number</label>
-                                                <input type="tel" class="form-control-simple" id="phone" name="phone" value="{{ optional(auth()->user()->customer)->phone }}" placeholder="+1 (555) 123-4567">
+                                            <div>
+                                                <label for="country" class="block text-[11px] font-bold text-stone-700 uppercase tracking-wider mb-1">
+                                                    Country
+                                                </label>
+                                                <input type="text" id="country" name="country" value="{{ old('country', optional(auth()->user()->customer)->country ?? 'Bangladesh') }}" placeholder="e.g. Bangladesh"
+                                                       class="w-full px-3.5 py-2.5 text-xs sm:text-sm bg-white border border-stone-300 rounded-sm focus:border-[#a28e46] focus:ring-1 focus:ring-[#a28e46]/30 focus:outline-none transition-colors">
                                             </div>
                                         </div>
                                     </div>
                                 </div>
                             </div>
-                            <div class="col-lg-6">
-                                <div class="form-section">
-                                    <h6 class="form-section-title">Address Information</h6>
-                                    <div class="row g-3">
-                                        <div class="col-12">
-                                            <div class="form-group">
-                                                <label for="street" class="form-label-simple">Street Address</label>
-                                                <input type="text" class="form-control-simple" id="street" name="address_1" value="{{ optional(auth()->user()->customer)->address_1 }}" placeholder="123 Main Street">
-                                            </div>
-                                        </div>
-                                        <div class="col-12">
-                                            <div class="form-group">
-                                                <label for="address_2" class="form-label-simple">Address Line 2</label>
-                                                <input type="text" class="form-control-simple" id="address_2" name="address_2" value="{{ optional(auth()->user()->customer)->address_2 }}" placeholder="Apartment, suite, unit, etc.">
-                                            </div>
-                                        </div>
-                                        <div class="col-md-6">
-                                            <div class="form-group">
-                                                <label for="city" class="form-label-simple">City</label>
-                                                <input type="text" class="form-control-simple" id="city" name="city" value="{{ optional(auth()->user()->customer)->city }}">
-                                            </div>
-                                        </div>
-                                        <div class="col-md-6">
-                                            <div class="form-group">
-                                                <label for="state" class="form-label-simple">State/Province</label>
-                                                <input type="text" class="form-control-simple" id="state" name="state" value="{{ optional(auth()->user()->customer)->state }}">
-                                            </div>
-                                        </div>
-                                        <div class="col-md-6">
-                                            <div class="form-group">
-                                                <label for="zip" class="form-label-simple">ZIP/Postal Code</label>
-                                                <input type="text" class="form-control-simple" id="zip" name="zip_code" value="{{ optional(auth()->user()->customer)->zip_code }}">
-                                            </div>
-                                        </div>
-                                        <div class="col-md-6">
-                                            <div class="form-group">
-                                                <label for="country" class="form-label-simple">Country</label>
-                                                <input type="text" class="form-control-simple" id="country" name="country" value="{{ optional(auth()->user()->customer)->country }}">
-                                            </div>
-                                        </div>
-                                    </div>
-                                </div>
-                            </div>
-                            <div class="col-12 text-center pt-4">
-                                <button type="submit" class="btn-simple">
-                                    Update Profile
+
+                            <!-- Save Button CTA -->
+                            <div class="mt-6 sm:mt-8 pt-5 sm:pt-6 border-t border-stone-200 flex flex-col sm:flex-row items-center justify-between gap-4">
+                                <span class="text-[11px] sm:text-xs text-stone-400 font-light text-center sm:text-left order-2 sm:order-1">
+                                    Changes will apply immediately across your upcoming checkout orders.
+                                </span>
+                                <button type="submit" class="w-full sm:w-auto bg-[#a28e46] hover:bg-[#8e7b39] text-white font-bold text-xs uppercase tracking-widest px-8 py-3.5 rounded-sm shadow-md hover:shadow-lg transition-all inline-flex items-center justify-center gap-2 cursor-pointer focus:outline-none order-1 sm:order-2">
+                                    <i class="fa-solid fa-floppy-disk text-xs"></i>
+                                    <span>Save Profile Changes</span>
                                 </button>
                             </div>
                         </form>
                     </div>
 
-                    <!-- Security Tab -->
+                    <!-- ───────────────────────────────────────────────
+                         TAB 2: SECURITY & PASSWORD
+                    ─────────────────────────────────────────────── -->
                     <div class="tab-pane fade {{ request()->get('tab') == 'security' ? 'show active' : '' }}" id="security" role="tabpanel" aria-labelledby="security-tab">
-                        <div class="row justify-content-center">
-                            <div class="col-lg-8">
-                                <h6 class="mb-3">Change Password</h6>
-                                <form class="row g-3" action="{{ route('password.store') }}" method="POST">
+                        <div class="max-w-2xl mx-auto">
+                            <div class="bg-stone-50/70 border border-stone-200/90 rounded-sm p-4 sm:p-8 shadow-xs">
+                                
+                                <div class="flex items-center gap-3 pb-3.5 sm:pb-4 mb-5 sm:mb-6 border-b border-stone-200/80">
+                                    <div class="w-8 h-8 sm:w-9 sm:h-9 rounded-full bg-[#faf7f0] border border-[#a28e46]/30 text-[#a28e46] flex items-center justify-center text-xs sm:text-sm shadow-xs flex-shrink-0">
+                                        <i class="fa-solid fa-lock"></i>
+                                    </div>
+                                    <div>
+                                        <h2 class="font-serif font-bold text-xs sm:text-sm uppercase tracking-wider text-stone-900 leading-tight">
+                                            Update Account Password
+                                        </h2>
+                                        <p class="text-[10px] sm:text-[11px] text-stone-500">Ensure your account uses a strong, unique password.</p>
+                                    </div>
+                                </div>
+
+                                <form action="{{ route('password.update') }}" method="POST" class="space-y-3.5 sm:space-y-4">
                                     @csrf
-                                    <div class="col-12">
-                                        <label for="currentPassword" class="form-label-simple">Current Password</label>
-                                        <input type="password" class="form-control-simple" id="currentPassword" name="current_password" required autocomplete="current-password">
+                                    @method('PUT')
+
+                                    <div>
+                                        <label for="currentPassword" class="block text-[11px] font-bold text-stone-700 uppercase tracking-wider mb-1">
+                                            Current Password <span class="text-rose-500">*</span>
+                                        </label>
+                                        <input type="password" id="currentPassword" name="current_password" required autocomplete="current-password"
+                                               placeholder="••••••••"
+                                               class="w-full px-3.5 py-2.5 text-xs sm:text-sm bg-white border border-stone-300 rounded-sm focus:border-[#a28e46] focus:ring-1 focus:ring-[#a28e46]/30 focus:outline-none transition-colors">
+                                        @if($errors->updatePassword->has('current_password'))
+                                            <p class="text-xs text-rose-600 mt-1 font-medium">{{ $errors->updatePassword->first('current_password') }}</p>
+                                        @endif
                                     </div>
-                                    <div class="col-12">
-                                        <label for="newPassword" class="form-label-simple">New Password</label>
-                                        <input type="password" class="form-control-simple" id="newPassword" name="password" required autocomplete="new-password">
+
+                                    <div>
+                                        <label for="newPassword" class="block text-[11px] font-bold text-stone-700 uppercase tracking-wider mb-1">
+                                            New Password <span class="text-rose-500">*</span>
+                                        </label>
+                                        <input type="password" id="newPassword" name="password" required autocomplete="new-password"
+                                               placeholder="••••••••"
+                                               class="w-full px-3.5 py-2.5 text-xs sm:text-sm bg-white border border-stone-300 rounded-sm focus:border-[#a28e46] focus:ring-1 focus:ring-[#a28e46]/30 focus:outline-none transition-colors">
+                                        @if($errors->updatePassword->has('password'))
+                                            <p class="text-xs text-rose-600 mt-1 font-medium">{{ $errors->updatePassword->first('password') }}</p>
+                                        @endif
                                     </div>
-                                    <div class="col-12">
-                                        <label for="confirmPassword" class="form-label-simple">Confirm New Password</label>
-                                        <input type="password" class="form-control-simple" id="confirmPassword" name="password_confirmation" required autocomplete="new-password">
+
+                                    <div>
+                                        <label for="confirmPassword" class="block text-[11px] font-bold text-stone-700 uppercase tracking-wider mb-1">
+                                            Confirm New Password <span class="text-rose-500">*</span>
+                                        </label>
+                                        <input type="password" id="confirmPassword" name="password_confirmation" required autocomplete="new-password"
+                                               placeholder="••••••••"
+                                               class="w-full px-3.5 py-2.5 text-xs sm:text-sm bg-white border border-stone-300 rounded-sm focus:border-[#a28e46] focus:ring-1 focus:ring-[#a28e46]/30 focus:outline-none transition-colors">
                                     </div>
-                                    <div class="col-12 text-center pt-2">
-                                        <button type="submit" class="btn-simple">
-                                            Update Password
+
+                                    <div class="p-3 sm:p-3.5 bg-[#faf7f0] border border-[#a28e46]/20 rounded-sm text-[10px] sm:text-[11px] text-stone-600 space-y-1">
+                                        <div class="font-bold text-[#8e7b39] uppercase tracking-wider flex items-center gap-1.5">
+                                            <i class="fa-solid fa-circle-info text-[10px]"></i>
+                                            <span>Password Guidelines</span>
+                                        </div>
+                                        <p class="text-stone-500 leading-relaxed">
+                                            Must be at least 8 characters long and include uppercase and lowercase letters, numbers, and symbols.
+                                        </p>
+                                    </div>
+
+                                    <div class="pt-3 sm:pt-4 text-center sm:text-right">
+                                        <button type="submit" class="w-full sm:w-auto bg-[#a28e46] hover:bg-[#8e7b39] text-white font-bold text-xs uppercase tracking-widest px-8 py-3.5 rounded-sm shadow-md hover:shadow-lg transition-all inline-flex items-center justify-center gap-2 cursor-pointer focus:outline-none">
+                                            <i class="fa-solid fa-key text-xs"></i>
+                                            <span>Update Password</span>
                                         </button>
                                     </div>
                                 </form>
@@ -453,393 +406,285 @@
                         </div>
                     </div>
 
-                    <!-- My Orders Tab -->
+                    <!-- ───────────────────────────────────────────────
+                         TAB 3: MY ORDERS
+                    ─────────────────────────────────────────────── -->
                     <div class="tab-pane fade {{ request()->get('tab') == 'orders' ? 'show active' : '' }}" id="orders" role="tabpanel" aria-labelledby="orders-tab">
-                        <div class="d-flex justify-content-between align-items-center mb-3">
-                            <h6 class="mb-0">Order History</h6>
-                            <div class="d-flex align-items-center gap-2">
-                                <select class="form-control-simple w-auto" name="status" id="orderStatusFilter">
-                                    <option value="all" {{ request('status') == 'all' || !request('status') ? 'selected' : '' }}>All Orders</option>
-                                    <option value="delivered" {{ request('status') == 'delivered' ? 'selected' : '' }}>Delivered</option>
-                                    <option value="shipping" {{ request('status') == 'shipping' ? 'selected' : '' }}>Shipping</option>
-                                    <option value="approved" {{ request('status') == 'approved' ? 'selected' : '' }}>Approved</option>
-                                    <option value="pending" {{ request('status') == 'pending' ? 'selected' : '' }}>Pending</option>
-                                    <option value="cancelled" {{ request('status') == 'cancelled' ? 'selected' : '' }}>Cancelled</option>
-                                </select>
-                                <div id="filterLoading" class="d-none">
-                                    <i class="fas fa-spinner fa-spin text-primary"></i>
+                        
+                        <!-- Top Filter Bar -->
+                        <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-4 mb-5 border-b border-stone-200">
+                            <div>
+                                <h2 class="font-serif font-bold text-sm sm:text-base uppercase tracking-wider text-stone-900 leading-tight">
+                                    Order History
+                                </h2>
+                                <p class="text-[11px] sm:text-xs text-stone-500">Track and review all your luxury beauty purchases</p>
+                            </div>
+
+                            <div class="flex items-center justify-between sm:justify-end gap-3 w-full sm:w-auto">
+                                <label for="orderStatusFilter" class="text-[11px] font-bold text-stone-700 uppercase tracking-wider">
+                                    Filter:
+                                </label>
+                                <div class="relative flex-1 sm:flex-none">
+                                    <select name="status" id="orderStatusFilter"
+                                            class="w-full sm:w-auto text-xs bg-stone-50 border border-stone-300 rounded-sm px-3 py-2 pr-8 font-medium text-stone-700 focus:border-[#a28e46] focus:bg-white focus:outline-none transition-colors cursor-pointer appearance-none">
+                                        <option value="all" {{ request('status') == 'all' || !request('status') ? 'selected' : '' }}>All Orders ({{ $allOrders->count() }})</option>
+                                        <option value="delivered" {{ request('status') == 'delivered' ? 'selected' : '' }}>Delivered ({{ $allOrders->where('status', 'delivered')->count() }})</option>
+                                        <option value="shipping" {{ request('status') == 'shipping' ? 'selected' : '' }}>Shipping ({{ $allOrders->where('status', 'shipping')->count() }})</option>
+                                        <option value="approved" {{ request('status') == 'approved' ? 'selected' : '' }}>Approved ({{ $allOrders->where('status', 'approved')->count() }})</option>
+                                        <option value="pending" {{ request('status') == 'pending' ? 'selected' : '' }}>Pending ({{ $allOrders->where('status', 'pending')->count() }})</option>
+                                        <option value="cancelled" {{ request('status') == 'cancelled' ? 'selected' : '' }}>Cancelled ({{ $allOrders->where('status', 'cancelled')->count() }})</option>
+                                    </select>
+                                    <i class="fa-solid fa-chevron-down absolute right-3 top-1/2 -translate-y-1/2 text-stone-400 text-[10px] pointer-events-none"></i>
+                                </div>
+                                <div id="filterLoading" class="hidden">
+                                    <i class="fas fa-spinner fa-spin text-[#a28e46] text-sm"></i>
                                 </div>
                             </div>
                         </div>
 
+                        <!-- Orders List Container -->
                         <div id="ordersContainer">
-                        @forelse ($orders as $order)
-                        <div class="order-card-simple">
-                            <div class="d-flex justify-content-between align-items-start mb-3">
-                                <div>
-                                    <h6 class="mb-1 fw-bold">{{$order->order_number}}</h6>
-                                    <small class="text-muted-simple">
-                                        Placed on {{$order->created_at ? \Carbon\Carbon::parse($order->created_at)->format('M d, Y') : '-'}}
-                                    </small>
-                                </div>
-                                <div class="text-end">
-                                    <div class="h6 mb-1 fw-bold text-primary">{{$order->total}}৳</div>
-                                    @php
-                                        $displayStatus = ($order->invoice && $order->invoice->status === 'paid') ? 'paid' : $order->status;
-                                        $badgeClass = match($displayStatus) {
-                                            'paid' => 'bg-success',
-                                            'delivered' => 'bg-success',
-                                            'approved' => 'bg-warning',
-                                            'shipping' => 'bg-info',
-                                            'cancelled' => 'bg-danger',
-                                            default => 'bg-secondary'
-                                        };
-                                    @endphp
-                                    <span class="badge {{ $badgeClass }}">
-                                        {{ ucfirst($displayStatus) }}
-                                    </span>
-                                </div>
-                            </div>
-                            <div class="row g-2">
-                                @foreach ($order->items as $item)
-                                <div class="col-md-4">
-                                    <div class="d-flex align-items-center p-2 rounded order-item">
-                                        <div class="me-2">
-                                            @if($item->product && $item->product->image)
-                                                <img src="{{ asset($item->product->image) }}" alt="Product" class="order-thumb">
-                                            @else
-                                                <div class="rounded d-flex align-items-center justify-content-center bg-white"
-                                                    style="width: 48px; height: 48px;">
-                                                    <i class="fas fa-image text-muted"></i>
-                                                </div>
-                                            @endif
-                                        </div>
-                                        <div class="flex-grow-1">
-                                            @if($item->product)
-                                                <a href="{{ route('product.details', $item->product->slug) }}" class="d-block fw-semibold text-dark text-decoration-none small">{{ $item->product->name }}</a>
-                                            @else
-                                                <span class="d-block fw-semibold text-muted small">Product Deleted</span>
-                                            @endif
-                                            <small class="text-muted-simple">Qty: {{number_format($item->quantity,0)}}</small>
-                                        </div>
-                                    </div>
-                                </div>
-                                @endforeach
-                            </div>
-                        <div class="d-flex justify-content-between align-items-center pt-2 border-top mt-2">
-                                <a href="{{ route('order.details', urlencode($order->order_number)) }}" class="btn-view btn-sm">
-                                    View Details
-                                </a>
-                                <div class="d-flex gap-2">
-                                    @if($order->status == 'pending')
-                                    <form action="{{ route('order.cancel', $order->id) }}?tab=orders" method="POST" class="d-inline cancel-order-form">
-                                        @csrf
-                                        <button type="button" class="btn-cancel btn-sm btn-cancel-order" data-bs-toggle="modal" data-bs-target="#cancelOrderModal" data-order-id="{{$order->id}}">
-                                            Cancel
-                                        </button>
-                                    </form>
-                                    @endif
-                                    
-                                    @if(in_array($order->status, ['cancelled', 'pending']))
-                                    <form action="{{ route('order.delete', $order->id) }}?tab=orders" method="POST" class="d-inline delete-order-form">
-                                        @csrf
-                                        @method('DELETE')
-                                        <button type="button" class="btn-delete-strong btn-sm btn-delete-order" data-bs-toggle="modal" data-bs-target="#deleteOrderModal" data-order-id="{{$order->id}}" data-order-number="{{$order->order_number}}">
-                                            <i class="fas fa-trash"></i>
-                                            Delete
-                                        </button>
-                                    </form>
-                                    @endif
-                                </div>
-                            </div>
-                        </div>
-                        @empty
-                            <div class="text-center py-4">
-                                <i class="fas fa-shopping-bag fa-3x text-muted mb-3"></i>
-                                <h6 class="text-muted">
-                                    @if(request('status') && request('status') !== 'all')
-                                        No {{ ucfirst(request('status')) }} Orders Found
-                                    @else
-                                        No orders found
-                                    @endif
-                                </h6>
-                                <p class="text-muted-simple">
-                                    @if(request('status') && request('status') !== 'all')
-                                        You don't have any {{ request('status') }} orders.
-                                    @else
-                                        You haven't placed any orders yet.
-                                    @endif
-                                </p>
-                                @if(!request('status') || request('status') === 'all')
-                                    <a href="{{ route('product.archive') }}" class="btn-simple">Start Shopping</a>
-                                @else
-                                    <a href="{{ route('profile.edit', ['tab' => 'orders']) }}" class="btn-simple">View All Orders</a>
-                                @endif
-                            </div>
-                        @endforelse
+                            @include('ecommerce.partials.orders-list', ['orders' => $orders, 'allOrders' => $allOrders])
                         </div>
 
-                        <div id="ordersPagination">
-                        @if($orders->count() > 0)
-                        <div class="d-flex justify-content-center mt-3">
-                            {{ $orders->appends(['tab' => 'orders', 'status' => request('status')])->links('vendor.pagination.bootstrap-5') }}
-                        </div>
-                        @endif
+                        <!-- Pagination Container -->
+                        <div id="ordersPagination" class="mt-6 sm:mt-8">
+                            @if($orders->count() > 0)
+                                <div class="flex justify-center overflow-x-auto py-2">
+                                    {{ $orders->appends(['tab' => 'orders', 'status' => request('status')])->links('vendor.pagination.bootstrap-5') }}
+                                </div>
+                            @endif
                         </div>
                     </div>
 
-                    
                 </div>
             </div>
         </div>
     </div>
+</div>
 
-    <!-- Cancel Confirmation Modal -->
-    <div class="modal fade" id="cancelOrderModal" tabindex="-1" aria-labelledby="cancelOrderModalLabel" aria-hidden="true">
-        <div class="modal-dialog modal-dialog-centered">
-            <div class="modal-content">
-                <div class="modal-header">
-                    <h5 class="modal-title" id="cancelOrderModalLabel">Cancel Order</h5>
-                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
-                </div>
-                <div class="modal-body">
-                    <p>Are you sure you want to cancel this order? This action cannot be undone.</p>
-                </div>
-                <div class="modal-footer">
-                    <button type="button" class="btn-outline-simple" data-bs-dismiss="modal">No, Keep Order</button>
-                    <button type="button" class="btn btn-danger btn-sm" id="confirmCancelOrderBtn">Yes, Cancel Order</button>
-                </div>
-            </div>
-        </div>
-    </div>
+<!-- ───────────────────────────────────────────────
+     MODALS
+─────────────────────────────────────────────── -->
 
-    <!-- Delete Confirmation Modal -->
-    <div class="modal fade" id="deleteOrderModal" tabindex="-1" aria-labelledby="deleteOrderModalLabel" aria-hidden="true">
-        <div class="modal-dialog modal-dialog-centered">
-            <div class="modal-content">
-                <div class="modal-header">
-                    <h5 class="modal-title" id="deleteOrderModalLabel">Delete Order</h5>
-                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
-                </div>
-                <div class="modal-body">
-                    <div class="text-center mb-3">
-                        <i class="fas fa-exclamation-triangle text-warning" style="font-size: 3rem;"></i>
+<!-- Cancel Confirmation Modal -->
+<div class="modal fade" id="cancelOrderModal" tabindex="-1" aria-labelledby="cancelOrderModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered mx-4 sm:mx-auto">
+        <div class="modal-content rounded-sm border border-stone-300 shadow-xl overflow-hidden">
+            <div class="modal-header bg-[#faf8f5] border-b border-stone-200 px-5 sm:px-6 py-3.5 sm:py-4">
+                <div class="flex items-center gap-2.5">
+                    <div class="w-8 h-8 rounded-full bg-amber-100 text-amber-600 flex items-center justify-center text-xs flex-shrink-0">
+                        <i class="fa-solid fa-triangle-exclamation"></i>
                     </div>
-                    <p class="text-center">Are you sure you want to delete order <strong id="deleteOrderNumber"></strong>?</p>
-                    <p class="text-center text-muted small">This action cannot be undone and will permanently remove the order from your history.</p>
+                    <h5 class="modal-title font-serif font-bold text-xs sm:text-sm uppercase tracking-wider text-stone-900" id="cancelOrderModalLabel">
+                        Cancel Order Confirmation
+                    </h5>
                 </div>
-                <div class="modal-footer">
-                    <button type="button" class="btn-outline-simple" data-bs-dismiss="modal">No, Keep Order</button>
-                    <button type="button" class="btn-delete" id="confirmDeleteOrderBtn">Yes, Delete Order</button>
-                </div>
+                <button type="button" class="btn-close text-xs" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body px-5 sm:px-6 py-4 sm:py-5 text-xs text-stone-600 space-y-2">
+                <p class="font-medium text-stone-800">Are you sure you want to cancel this order?</p>
+                <p class="text-stone-500">This action cannot be undone. If you have already made payment, our concierge team will initiate a refund according to our policy.</p>
+            </div>
+            <div class="modal-footer bg-stone-50 border-t border-stone-200 px-5 sm:px-6 py-3 flex flex-col sm:flex-row justify-end gap-2">
+                <button type="button" class="w-full sm:w-auto px-4 py-2 border border-stone-300 hover:bg-stone-100 text-stone-700 text-xs font-bold uppercase tracking-wider rounded-sm transition-colors" data-bs-dismiss="modal">
+                    Keep Order
+                </button>
+                <button type="button" class="w-full sm:w-auto px-4 py-2 bg-amber-600 hover:bg-amber-700 text-white text-xs font-bold uppercase tracking-wider rounded-sm shadow-xs transition-colors" id="confirmCancelOrderBtn">
+                    Yes, Cancel Order
+                </button>
             </div>
         </div>
     </div>
+</div>
+
+<!-- Delete Confirmation Modal -->
+<div class="modal fade" id="deleteOrderModal" tabindex="-1" aria-labelledby="deleteOrderModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered mx-4 sm:mx-auto">
+        <div class="modal-content rounded-sm border border-stone-300 shadow-xl overflow-hidden">
+            <div class="modal-header bg-rose-50/50 border-b border-stone-200 px-5 sm:px-6 py-3.5 sm:py-4">
+                <div class="flex items-center gap-2.5">
+                    <div class="w-8 h-8 rounded-full bg-rose-100 text-rose-600 flex items-center justify-center text-xs flex-shrink-0">
+                        <i class="fa-solid fa-trash-can"></i>
+                    </div>
+                    <h5 class="modal-title font-serif font-bold text-xs sm:text-sm uppercase tracking-wider text-rose-900" id="deleteOrderModalLabel">
+                        Delete Order Record
+                    </h5>
+                </div>
+                <button type="button" class="btn-close text-xs" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body px-5 sm:px-6 py-5 sm:py-6 text-center text-xs text-stone-600 space-y-2">
+                <p class="text-xs sm:text-sm font-medium text-stone-800">
+                    Are you sure you want to delete order <strong id="deleteOrderNumber" class="text-stone-900 font-mono"></strong>?
+                </p>
+                <p class="text-stone-500">
+                    This will permanently remove the cancelled order from your account history.
+                </p>
+            </div>
+            <div class="modal-footer bg-stone-50 border-t border-stone-200 px-5 sm:px-6 py-3 flex flex-col sm:flex-row justify-end gap-2">
+                <button type="button" class="w-full sm:w-auto px-4 py-2 border border-stone-300 hover:bg-stone-100 text-stone-700 text-xs font-bold uppercase tracking-wider rounded-sm transition-colors" data-bs-dismiss="modal">
+                    No, Keep Record
+                </button>
+                <button type="button" class="w-full sm:w-auto px-4 py-2 bg-rose-600 hover:bg-rose-700 text-white text-xs font-bold uppercase tracking-wider rounded-sm shadow-xs transition-colors" id="confirmDeleteOrderBtn">
+                    Yes, Delete Order
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
 
 @endsection
 
-    <script>
-        document.addEventListener('DOMContentLoaded', function() {
-            console.log('DOM loaded, initializing order buttons...');
-            let formToSubmit = null;
-            
-            // Function to activate tab
-            function activateTab(tabId) {
-                // Remove active class from all tabs
-                document.querySelectorAll('.nav-link').forEach(function(tab) {
-                    tab.classList.remove('active');
-                    tab.setAttribute('aria-selected', 'false');
-                });
-                
-                // Remove active class from all tab panes
-                document.querySelectorAll('.tab-pane').forEach(function(pane) {
-                    pane.classList.remove('show', 'active');
-                });
-                
-                // Activate the specified tab
-                const targetTab = document.getElementById(tabId + '-tab');
-                const targetPane = document.getElementById(tabId);
-                
-                if (targetTab && targetPane) {
-                    targetTab.classList.add('active');
-                    targetTab.setAttribute('aria-selected', 'true');
-                    targetPane.classList.add('show', 'active');
-                }
-            }
-            
-            // Handle tab parameter from URL - with delay to ensure DOM is ready
-            setTimeout(function() {
-                const urlParams = new URLSearchParams(window.location.search);
-                const activeTab = urlParams.get('tab');
-                
-                if (activeTab) {
-                    activateTab(activeTab);
-                }
-            }, 100);
-            
-            // Handle tab clicks to update URL
-            document.querySelectorAll('.nav-link').forEach(function(tab) {
-                tab.addEventListener('click', function(e) {
-                    const tabId = this.getAttribute('data-bs-target').replace('#', '');
-                    const url = new URL(window.location);
-                    url.searchParams.set('tab', tabId);
-                    window.history.pushState({}, '', url);
-                });
+@push('scripts')
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        let formToSubmit = null;
+        
+        // Function to activate tab cleanly
+        function activateTab(tabId) {
+            document.querySelectorAll('#profileTabs button').forEach(function(tab) {
+                tab.classList.remove('border-[#a28e46]', 'text-[#a28e46]', 'bg-white', 'font-bold', 'active', 'shadow-xs');
+                tab.classList.add('border-transparent', 'text-stone-500', 'hover:text-[#a28e46]', 'hover:bg-stone-100/50', 'font-semibold');
+                tab.setAttribute('aria-selected', 'false');
             });
             
-            // Cancel Order Modal
-            const cancelButtons = document.querySelectorAll('.btn-cancel-order');
-            console.log('Found cancel buttons:', cancelButtons.length);
+            document.querySelectorAll('.tab-pane').forEach(function(pane) {
+                pane.classList.remove('show', 'active');
+            });
             
+            const targetTab = document.getElementById(tabId + '-tab');
+            const targetPane = document.getElementById(tabId);
+            
+            if (targetTab && targetPane) {
+                targetTab.classList.remove('border-transparent', 'text-stone-500', 'hover:bg-stone-100/50');
+                targetTab.classList.add('border-[#a28e46]', 'text-[#a28e46]', 'bg-white', 'font-bold', 'active', 'shadow-xs');
+                targetTab.setAttribute('aria-selected', 'true');
+                targetPane.classList.add('show', 'active');
+            }
+        }
+        
+        // Handle tab parameter from URL on load
+        setTimeout(function() {
+            const urlParams = new URLSearchParams(window.location.search);
+            const activeTab = urlParams.get('tab');
+            if (activeTab) {
+                activateTab(activeTab);
+            }
+        }, 50);
+        
+        // Handle tab clicks to update URL & styling
+        document.querySelectorAll('#profileTabs button').forEach(function(tab) {
+            tab.addEventListener('click', function(e) {
+                const tabTarget = this.getAttribute('data-bs-target') || '';
+                const tabId = tabTarget.replace('#', '');
+                
+                activateTab(tabId);
+                
+                const url = new URL(window.location);
+                url.searchParams.set('tab', tabId);
+                window.history.pushState({}, '', url);
+            });
+        });
+        
+        // Order Filter with AJAX
+        const orderStatusFilter = document.getElementById('orderStatusFilter');
+        const filterLoading = document.getElementById('filterLoading');
+        const ordersContainer = document.getElementById('ordersContainer');
+        const ordersPagination = document.getElementById('ordersPagination');
+        
+        if (orderStatusFilter) {
+            orderStatusFilter.addEventListener('change', function() {
+                const status = this.value;
+                
+                if (filterLoading) filterLoading.classList.remove('hidden');
+                orderStatusFilter.disabled = true;
+                
+                const csrfMeta = document.querySelector('meta[name="csrf-token"]');
+                const csrfToken = csrfMeta ? csrfMeta.getAttribute('content') : '{{ csrf_token() }}';
+
+                fetch('{{ route("profile.filter.orders") }}', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'X-CSRF-TOKEN': csrfToken,
+                        'X-Requested-With': 'XMLHttpRequest'
+                    },
+                    body: JSON.stringify({
+                        status: status
+                    })
+                })
+                .then(response => response.json())
+                .then(data => {
+                    if (ordersContainer) ordersContainer.innerHTML = data.html;
+                    if (ordersPagination) ordersPagination.innerHTML = data.pagination;
+                    
+                    const url = new URL(window.location);
+                    if (status === 'all') {
+                        url.searchParams.delete('status');
+                    } else {
+                        url.searchParams.set('status', status);
+                    }
+                    window.history.pushState({}, '', url);
+                    
+                    initializeOrderButtons();
+                })
+                .catch(error => {
+                    console.error('Error filtering orders:', error);
+                    window.location.href = '{{ route("profile.edit") }}?tab=orders&status=' + status;
+                })
+                .finally(() => {
+                    if (filterLoading) filterLoading.classList.add('hidden');
+                    orderStatusFilter.disabled = false;
+                });
+            });
+        }
+        
+        // Function to bind cancel & delete modal triggers
+        function initializeOrderButtons() {
+            // Cancel Order Buttons
+            const cancelButtons = document.querySelectorAll('.btn-cancel-order');
             cancelButtons.forEach(function(btn) {
                 btn.addEventListener('click', function(e) {
-                    console.log('Cancel button clicked');
                     e.preventDefault();
-                    formToSubmit = this.closest('form');
-                    console.log('Form to submit:', formToSubmit);
+                    formToSubmit = this.closest('form') || document.querySelector(`form[action*="cancel-order/${this.dataset.orderId}"]`);
                 });
             });
             
-            const confirmCancelBtn = document.getElementById('confirmCancelOrderBtn');
-            if (confirmCancelBtn) {
-                confirmCancelBtn.addEventListener('click', function() {
-                    console.log('Confirm cancel clicked');
-                    if(formToSubmit) {
-                        console.log('Submitting cancel form');
-                        formToSubmit.submit();
-                    }
-                });
-            }
-            
-            // Order Filter Enhancement with AJAX
-            const orderStatusFilter = document.getElementById('orderStatusFilter');
-            const filterLoading = document.getElementById('filterLoading');
-            const ordersContainer = document.getElementById('ordersContainer');
-            const ordersPagination = document.getElementById('ordersPagination');
-            
-            if (orderStatusFilter) {
-                orderStatusFilter.addEventListener('change', function() {
-                    const status = this.value;
-                    
-                    // Show loading state
-                    filterLoading.classList.remove('d-none');
-                    orderStatusFilter.disabled = true;
-                    
-                    // Make AJAX request
-                    fetch('{{ route("profile.filter.orders") }}', {
-                        method: 'POST',
-                        headers: {
-                            'Content-Type': 'application/json',
-                            'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content'),
-                            'X-Requested-With': 'XMLHttpRequest'
-                        },
-                        body: JSON.stringify({
-                            status: status
-                        })
-                    })
-                    .then(response => response.json())
-                    .then(data => {
-                        // Update orders container
-                        ordersContainer.innerHTML = data.html;
-                        
-                        // Update pagination
-                        ordersPagination.innerHTML = data.pagination;
-                        
-                        // Update URL without page reload
-                        const url = new URL(window.location);
-                        if (status === 'all') {
-                            url.searchParams.delete('status');
-                        } else {
-                            url.searchParams.set('status', status);
-                        }
-                        window.history.pushState({}, '', url);
-                        
-                        // Re-initialize order buttons for new content
-                        initializeOrderButtons();
-                    })
-                    .catch(error => {
-                        console.error('Error filtering orders:', error);
-                        // Fallback to page reload
-                        window.location.href = '{{ route("profile.edit") }}?tab=orders&status=' + status;
-                    })
-                    .finally(() => {
-                        // Hide loading state
-                        filterLoading.classList.add('d-none');
-                        orderStatusFilter.disabled = false;
-                    });
-                });
-            }
-            
-            // Function to re-initialize order buttons after AJAX update
-            function initializeOrderButtons() {
-                // Cancel Order Modal
-                const cancelButtons = document.querySelectorAll('.btn-cancel-order');
-                cancelButtons.forEach(function(btn) {
-                    btn.addEventListener('click', function(e) {
-                        e.preventDefault();
-                        formToSubmit = this.closest('form');
-                    });
-                });
-                
-                // Delete Order Modal
-                const deleteButtons = document.querySelectorAll('.btn-delete-order');
-                deleteButtons.forEach(function(btn) {
-                    btn.addEventListener('click', function(e) {
-                        e.preventDefault();
-                        formToSubmit = this.closest('form');
-                        const orderNumber = this.getAttribute('data-order-number');
-                        document.getElementById('deleteOrderNumber').textContent = orderNumber;
-                    });
-                });
-            }
-            
-            // Delete Order Modal
+            // Delete Order Buttons
             const deleteButtons = document.querySelectorAll('.btn-delete-order');
-            console.log('Found delete buttons:', deleteButtons.length);
-            
             deleteButtons.forEach(function(btn) {
                 btn.addEventListener('click', function(e) {
-                    console.log('Delete button clicked');
                     e.preventDefault();
-                    formToSubmit = this.closest('form');
+                    formToSubmit = this.closest('form') || document.querySelector(`form[action*="delete-order/${this.dataset.orderId}"]`);
                     const orderNumber = this.getAttribute('data-order-number');
-                    const deleteOrderNumber = document.getElementById('deleteOrderNumber');
-                    if (deleteOrderNumber) {
-                        deleteOrderNumber.textContent = orderNumber;
+                    const deleteOrderNumberEl = document.getElementById('deleteOrderNumber');
+                    if (deleteOrderNumberEl) {
+                        deleteOrderNumberEl.textContent = orderNumber || '';
                     }
-                    console.log('Form to submit:', formToSubmit);
                 });
             });
-            
-            const confirmDeleteBtn = document.getElementById('confirmDeleteOrderBtn');
-            if (confirmDeleteBtn) {
-                confirmDeleteBtn.addEventListener('click', function() {
-                    console.log('Confirm delete clicked');
-                    if(formToSubmit) {
-                        console.log('Submitting delete form');
-                        formToSubmit.submit();
-                    }
-                });
-            }
+        }
+        
+        const confirmCancelBtn = document.getElementById('confirmCancelOrderBtn');
+        if (confirmCancelBtn) {
+            confirmCancelBtn.addEventListener('click', function() {
+                if (formToSubmit) {
+                    formToSubmit.submit();
+                }
+            });
+        }
 
-            // Ensure Bootstrap modals are appended to body to avoid clipping/z-index issues
-            const cancelModal = document.getElementById('cancelOrderModal');
-            const deleteModal = document.getElementById('deleteOrderModal');
-            ['cancelOrderModal','deleteOrderModal'].forEach(id => {
-                const modalEl = document.getElementById(id);
-                if (!modalEl) return;
-                modalEl.addEventListener('show.bs.modal', function (event) {
-                    document.body.appendChild(modalEl);
-                    // Make sure z-index is above any sticky headers
-                    modalEl.style.zIndex = '2000';
-                    const backdrops = document.getElementsByClassName('modal-backdrop');
-                    if (backdrops.length) {
-                        backdrops[backdrops.length - 1].style.zIndex = '1990';
-                    }
-                });
+        const confirmDeleteBtn = document.getElementById('confirmDeleteOrderBtn');
+        if (confirmDeleteBtn) {
+            confirmDeleteBtn.addEventListener('click', function() {
+                if (formToSubmit) {
+                    formToSubmit.submit();
+                }
             });
-            
-            // Initialize order buttons on page load
-            initializeOrderButtons();
-        });
-    </script>
+        }
+
+        // Initialize on page load
+        initializeOrderButtons();
+    });
+</script>
+@endpush

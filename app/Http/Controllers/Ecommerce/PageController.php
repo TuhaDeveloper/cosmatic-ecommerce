@@ -462,27 +462,41 @@ class PageController extends Controller
 
     public function search(Request $request)
     {
-        $q = $request->query('q');
+        $q = trim($request->query('search') ?? $request->query('q') ?? $request->query('query') ?? '');
         $categories = $this->getSidebarCategories();
+        $brands = \App\Models\Brand::all();
         $query = Product::published();
 
-        if ($q) {
-            $query->where('name', 'LIKE', "%{$q}%");
+        if (!empty($q)) {
+            $query->where(function($b) use ($q) {
+                $b->where('name', 'LIKE', "%{$q}%")
+                  ->orWhere('sku', 'LIKE', "%{$q}%")
+                  ->orWhere('short_desc', 'LIKE', "%{$q}%")
+                  ->orWhere('description', 'LIKE', "%{$q}%")
+                  ->orWhereHas('category', function($cq) use ($q) {
+                      $cq->where('name', 'LIKE', "%{$q}%");
+                  })
+                  ->orWhereHas('brand', function($bq) use ($q) {
+                      $bq->where('name', 'LIKE', "%{$q}%");
+                  });
+            });
         }
 
         $maxProductPrice = $this->getMaxProductPrice();
-        $products = $query->paginate(20);
+        $products = $query->paginate(20)->appends($request->query());
         $this->attachWishlistStatus($products);
 
-        $pageTitle = 'Search Results for "' . $q . '"';
+        $pageTitle = !empty($q) ? 'Search Results for "' . $q . '"' : 'Search Products';
 
         $priceMin = $request->get('price_min', 0);
         $priceMax = $request->get('price_max', $maxProductPrice);
         $selectedCategories = [];
+        $selectedBrands = [];
+        $selectedInStock = null;
         $selectedRatings = [];
         $selectedSort = '';
 
-        return view('ecommerce.products', compact('products', 'categories', 'pageTitle', 'priceMin', 'priceMax', 'maxProductPrice', 'selectedCategories', 'selectedRatings', 'selectedSort'));
+        return view('ecommerce.products', compact('products', 'categories', 'brands', 'pageTitle', 'priceMin', 'priceMax', 'maxProductPrice', 'selectedCategories', 'selectedBrands', 'selectedInStock', 'selectedRatings', 'selectedSort'));
     }
 
     public function searchSuggestions(Request $request)

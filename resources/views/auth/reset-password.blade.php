@@ -1,348 +1,154 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <meta name="csrf-token" content="{{ csrf_token() }}">
-    <title>Reset Password - SISAL FASHION</title>
-    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;500;600;700&display=block" rel="stylesheet">
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
-    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css">
-    <style>
-        * {
-            margin: 0;
-            padding: 0;
-            box-sizing: border-box;
-        }
-        
-        body {
-            font-family: 'Outfit', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
-            background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);
-            min-height: 100vh;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-        }
-        
-        .reset-password-page {
-            width: 100%;
-            max-width: 500px;
-            padding: 20px;
-        }
-    
-        .reset-password-card {
-            background: white;
-            border-radius: 20px;
-            box-shadow: 0 20px 40px rgba(0, 0, 0, 0.1);
-            border: 1px solid #e9ecef;
-            padding: 50px 40px;
-        }
-        
-        .reset-password-title {
-            text-align: center;
-            margin-bottom: 40px;
-        }
-        
-        .reset-password-title h2 {
-            color: #333;
-            font-weight: 700;
-            margin-bottom: 15px;
-            font-size: 2rem;
-        }
-        
-        .reset-password-title p {
-            color: #666;
-            margin: 0;
-            font-size: 1.1rem;
-        }
-        
-        .form-group {
-            margin-bottom: 25px;
-            position: relative;
-        }
-        
-        .form-control {
-            height: 55px;
-            border: 2px solid #e9ecef;
-            border-radius: 12px;
-            padding: 15px 20px;
-            font-size: 16px;
-            transition: all 0.3s ease;
-            background-color: #f8f9fa;
-            width: 100%;
-        }
-        
-        .form-control:focus {
-            border-color: #00512C;
-            box-shadow: 0 0 0 0.2rem rgba(0, 81, 44, 0.25);
-            background-color: white;
-            outline: none;
-        }
-        
-        .form-label {
-            display: block;
-            margin-bottom: 8px;
-            font-weight: 600;
-            color: #333;
-            font-size: 14px;
-        }
-        
-        .btn-reset-password {
-            height: 55px;
-            background: linear-gradient(135deg, #00512C 0%, #0b7a4a 100%);
-            border: none;
-            border-radius: 12px;
-            font-weight: 600;
-            font-size: 16px;
-            transition: all 0.3s ease;
-            width: 100%;
-            position: relative;
-            overflow: hidden;
-            color: white;
-        }
-        
-        .btn-reset-password:hover {
-            background: linear-gradient(135deg, #004124 0%, #00512C 100%);
-            transform: translateY(-2px);
-            box-shadow: 0 8px 25px rgba(0, 81, 44, 0.3);
-        }
-        
-        .btn-reset-password:active {
-            transform: translateY(0);
-        }
-        
-        .btn-reset-password:disabled {
-            opacity: 0.7;
-            cursor: not-allowed;
-            transform: none;
-        }
-        
-        .error-message {
-            background-color: #f8d7da;
-            border: 1px solid #f5c6cb;
-            color: #721c24;
-            padding: 12px 15px;
-            border-radius: 8px;
-            margin-top: 10px;
-            font-size: 14px;
-            display: flex;
-            align-items: center;
-        }
-        
-        .success-message {
-            background-color: #d4edda;
-            border: 1px solid #c3e6cb;
-            color: #155724;
-            padding: 15px;
-            border-radius: 8px;
-            margin-bottom: 25px;
-            font-size: 14px;
-            display: flex;
-            align-items: center;
-        }
-        
-        .loading-spinner {
-            display: inline-block;
-            width: 18px;
-            height: 18px;
-            border: 2px solid #ffffff;
-            border-radius: 50%;
-            border-top-color: transparent;
-            animation: spin 1s linear infinite;
-        }
-        
-        @keyframes spin {
-            to { transform: rotate(360deg); }
-        }
-        
-        @media (max-width: 768px) {
-            body {
-                align-items: flex-start;
-            }
-            
-            .reset-password-page {
-                padding: 20px;
-                margin-top: 20px;
-            }
-            
-            .reset-password-card {
-                padding: 30px 25px;
-                margin: 10px;
-            }
-            
-            .reset-password-title h2 {
-                font-size: 1.5rem;
-                margin-bottom: 10px;
-            }
-            
-            .reset-password-title p {
-                font-size: 1rem;
-            }
-            
-            .form-control {
-                height: 50px;
-                font-size: 16px;
-                padding: 12px 18px;
-            }
-            
-            .form-label {
-                font-size: 13px;
-                margin-bottom: 6px;
-            }
-            
-            .btn-reset-password {
-                height: 50px;
-                font-size: 15px;
-            }
-        }
-        
-        @media (max-width: 480px) {
-            .reset-password-page {
-                padding: 15px;
-            }
-            
-            .reset-password-card {
-                padding: 25px 20px;
-                margin: 5px;
-                border-radius: 15px;
-            }
-            
-            .reset-password-title h2 {
-                font-size: 1.4rem;
-            }
-            
-            .reset-password-title p {
-                font-size: 0.95rem;
-            }
-            
-            .form-control {
-                height: 48px;
-                font-size: 15px;
-                padding: 10px 15px;
-            }
-            
-            .form-label {
-                font-size: 12px;
-                margin-bottom: 5px;
-            }
-            
-            .btn-reset-password {
-                height: 48px;
-                font-size: 14px;
-            }
-            
-            .form-group {
-                margin-bottom: 20px;
-            }
-        }
-    </style>
-</head>
-<body>
+@extends('layouts.guest')
 
-<!-- Reset Password Section -->
-<div class="reset-password-page">
-    <div class="reset-password-card">
-        <!-- Title -->
-        <div class="reset-password-title">
-            <h2>Reset Password</h2>
-            <p>Create a new password for your account</p>
+@section('title', 'Set New Password - Harosa Luxury Cosmetics')
+
+@section('content')
+<div class="w-full max-w-md">
+    <!-- Luxury Reset Password Card -->
+    <div class="bg-white border border-stone-200/90 rounded-sm shadow-xl p-6 sm:p-10 relative overflow-hidden">
+        
+        <!-- Gold Accent Top Line -->
+        <div class="absolute top-0 left-0 right-0 h-1 bg-gradient-to-r from-[#a28e46] via-[#d4af37] to-[#8e7b39]"></div>
+
+        <!-- Header Content -->
+        <div class="text-center mb-7">
+            <div class="inline-flex items-center gap-1.5 bg-[#a28e46]/10 border border-[#a28e46]/30 text-[#8e7b39] px-3 py-1 text-[10px] font-bold uppercase tracking-widest rounded-full mb-3 shadow-2xs">
+                <i class="fa-solid fa-lock text-[9px]"></i>
+                <span>Password Update</span>
+            </div>
+            <h1 class="font-serif text-2xl sm:text-3xl font-bold text-stone-900 uppercase tracking-tight mb-1.5">
+                Set New Password
+            </h1>
+            <p class="text-xs text-stone-500 font-light max-w-xs mx-auto">
+                Create a strong password to secure your Harosa client account.
+            </p>
         </div>
 
-        <!-- Reset Password Form -->
-        <form method="POST" action="{{ route('password.store') }}" id="resetPasswordForm">
+        <!-- Form -->
+        <form method="POST" action="{{ route('password.store') }}" id="resetPasswordForm" class="space-y-4">
             @csrf
 
             <!-- Password Reset Token -->
             <input type="hidden" name="token" value="{{ $request->route('token') }}">
 
             <!-- Email Address -->
-            <div class="form-group">
-                <label for="email" class="form-label">Email Address</label>
-                <input id="email" type="email" name="email" value="{{ old('email', $request->email) }}" required autofocus autocomplete="username" 
-                       class="form-control" placeholder="Enter your email address">
+            <div>
+                <label for="email" class="block text-[11px] font-bold text-stone-700 uppercase tracking-wider mb-1.5">
+                    Email Address <span class="text-rose-500">*</span>
+                </label>
+                <div class="relative w-full">
+                    <span class="input-icon-left">
+                        <i class="fa-regular fa-envelope"></i>
+                    </span>
+                    <input id="email" type="email" name="email" value="{{ old('email', $request->email) }}" required autofocus autocomplete="username"
+                           placeholder="you@example.com"
+                           style="padding-left: 40px !important; padding-right: 14px !important;"
+                           class="w-full py-2.5 text-xs sm:text-sm bg-stone-50/70 border @error('email') border-rose-400 bg-rose-50/30 @else border-stone-300 @enderror rounded-sm focus:border-[#a28e46] focus:bg-white focus:ring-1 focus:ring-[#a28e46]/30 focus:outline-none transition-all block">
+                </div>
                 @error('email')
-                    <div class="error-message">
-                        <i class="fas fa-exclamation-circle me-2"></i>
-                        {{ $message }}
-                    </div>
+                    <p class="text-xs text-rose-600 mt-1.5 font-medium">{{ $message }}</p>
                 @enderror
             </div>
 
-            <!-- Password -->
-            <div class="form-group">
-                <label for="password" class="form-label">New Password</label>
-                <input id="password" type="password" name="password" required autocomplete="new-password" 
-                       class="form-control" placeholder="Enter your new password">
+            <!-- New Password -->
+            <div>
+                <label for="password" class="block text-[11px] font-bold text-stone-700 uppercase tracking-wider mb-1.5">
+                    New Password <span class="text-rose-500">*</span>
+                </label>
+                <div class="relative w-full">
+                    <span class="input-icon-left">
+                        <i class="fa-solid fa-lock"></i>
+                    </span>
+                    <input id="password" type="password" name="password" required autocomplete="new-password"
+                           placeholder="••••••••"
+                           style="padding-left: 40px !important; padding-right: 42px !important;"
+                           class="w-full py-2.5 text-xs sm:text-sm bg-stone-50/70 border @error('password') border-rose-400 bg-rose-50/30 @else border-stone-300 @enderror rounded-sm focus:border-[#a28e46] focus:bg-white focus:ring-1 focus:ring-[#a28e46]/30 focus:outline-none transition-all block">
+                    <button type="button" id="togglePasswordBtn" class="input-icon-right" aria-label="Toggle password visibility">
+                        <i class="fa-regular fa-eye" id="togglePasswordIcon"></i>
+                    </button>
+                </div>
                 @error('password')
-                    <div class="error-message">
-                        <i class="fas fa-exclamation-circle me-2"></i>
-                        {{ $message }}
-                    </div>
+                    <p class="text-xs text-rose-600 mt-1.5 font-medium">{{ $message }}</p>
                 @enderror
             </div>
 
             <!-- Confirm Password -->
-            <div class="form-group">
-                <label for="password_confirmation" class="form-label">Confirm New Password</label>
-                <input id="password_confirmation" type="password" name="password_confirmation" required autocomplete="new-password" 
-                       class="form-control" placeholder="Confirm your new password">
-                @error('password_confirmation')
-                    <div class="error-message">
-                        <i class="fas fa-exclamation-circle me-2"></i>
-                        {{ $message }}
-                    </div>
-                @enderror
+            <div>
+                <label for="password_confirmation" class="block text-[11px] font-bold text-stone-700 uppercase tracking-wider mb-1.5">
+                    Confirm Password <span class="text-rose-500">*</span>
+                </label>
+                <div class="relative w-full">
+                    <span class="input-icon-left">
+                        <i class="fa-solid fa-shield-halved"></i>
+                    </span>
+                    <input id="password_confirmation" type="password" name="password_confirmation" required autocomplete="new-password"
+                           placeholder="••••••••"
+                           style="padding-left: 40px !important; padding-right: 14px !important;"
+                           class="w-full py-2.5 text-xs sm:text-sm bg-stone-50/70 border border-stone-300 rounded-sm focus:border-[#a28e46] focus:bg-white focus:ring-1 focus:ring-[#a28e46]/30 focus:outline-none transition-all block">
+                </div>
             </div>
 
-            <!-- Reset Password Button -->
-            <button type="submit" class="btn btn-primary btn-reset-password" id="resetPasswordBtn">
-                <i class="fas fa-lock me-2"></i>
-                <span class="btn-text">Reset Password</span>
-            </button>
+            <!-- Submit Action Button -->
+            <div class="pt-2">
+                <button type="submit" id="resetPasswordBtn" class="w-full bg-[#a28e46] hover:bg-[#8e7b39] text-white font-bold text-xs uppercase tracking-widest py-3.5 px-6 rounded-sm shadow-md hover:shadow-lg transition-all duration-200 flex items-center justify-center gap-2 cursor-pointer focus:outline-none">
+                    <span id="resetPasswordBtnText">Reset Password</span>
+                    <i class="fa-solid fa-arrow-right text-xs" id="resetPasswordBtnArrow"></i>
+                    <div id="resetPasswordSpinner" class="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin hidden"></div>
+                </button>
+            </div>
         </form>
+
+        <!-- Back to Sign In Link -->
+        <div class="mt-8 pt-6 border-t border-stone-100 text-center">
+            <p class="text-xs text-stone-500 font-light">
+                <a href="{{ route('login') }}" class="font-bold text-[#a28e46] hover:text-[#8e7b39] transition-colors uppercase tracking-wider no-underline">
+                    Back to Sign In
+                </a>
+            </p>
+        </div>
+
     </div>
 </div>
+@endsection
 
+@push('scripts')
 <script>
-document.addEventListener('DOMContentLoaded', function() {
-    const form = document.getElementById('resetPasswordForm');
-    const resetPasswordBtn = document.getElementById('resetPasswordBtn');
-    const btnText = resetPasswordBtn.querySelector('.btn-text');
-    
-    // Add loading state to submit button
-    form.addEventListener('submit', function(e) {
-        // Show loading state immediately
-        resetPasswordBtn.disabled = true;
-        btnText.innerHTML = '<span class="loading-spinner me-2"></span>Resetting Password...';
+    document.addEventListener('DOMContentLoaded', function() {
+        // Toggle Password
+        const togglePasswordBtn = document.getElementById('togglePasswordBtn');
+        const passwordInput = document.getElementById('password');
+        const togglePasswordIcon = document.getElementById('togglePasswordIcon');
+
+        if (togglePasswordBtn && passwordInput && togglePasswordIcon) {
+            togglePasswordBtn.addEventListener('click', function() {
+                const isPassword = passwordInput.getAttribute('type') === 'password';
+                passwordInput.setAttribute('type', isPassword ? 'text' : 'password');
+                
+                if (isPassword) {
+                    togglePasswordIcon.classList.remove('fa-eye');
+                    togglePasswordIcon.classList.add('fa-eye-slash');
+                } else {
+                    togglePasswordIcon.classList.remove('fa-eye-slash');
+                    togglePasswordIcon.classList.add('fa-eye');
+                }
+            });
+        }
+
+        // Submit loading
+        const resetPasswordForm = document.getElementById('resetPasswordForm');
+        const resetPasswordBtn = document.getElementById('resetPasswordBtn');
+        const resetPasswordBtnText = document.getElementById('resetPasswordBtnText');
+        const resetPasswordBtnArrow = document.getElementById('resetPasswordBtnArrow');
+        const resetPasswordSpinner = document.getElementById('resetPasswordSpinner');
+
+        if (resetPasswordForm && resetPasswordBtn) {
+            resetPasswordForm.addEventListener('submit', function() {
+                resetPasswordBtn.disabled = true;
+                if (resetPasswordBtnText) resetPasswordBtnText.textContent = 'Updating password...';
+                if (resetPasswordBtnArrow) resetPasswordBtnArrow.classList.add('hidden');
+                if (resetPasswordSpinner) resetPasswordSpinner.classList.remove('hidden');
+            });
+        }
     });
-    
-    // Add focus effects to input fields
-    const inputs = document.querySelectorAll('.form-control');
-    inputs.forEach(input => {
-        input.addEventListener('focus', function() {
-            this.style.borderColor = '#00512C';
-            this.style.backgroundColor = 'white';
-        });
-        
-        input.addEventListener('blur', function() {
-            if (!this.value) {
-                this.style.borderColor = '#e9ecef';
-                this.style.backgroundColor = '#f8f9fa';
-            }
-        });
-    });
-    
-    // Add smooth animations to error messages
-    const errorMessages = document.querySelectorAll('.error-message');
-    errorMessages.forEach(msg => {
-        msg.style.opacity = '0';
-        
-        setTimeout(() => {
-            msg.style.transition = 'opacity 0.3s ease';
-            msg.style.opacity = '1';
-        }, 100);
-    });
-});
 </script>
-</body>
-</html>
+@endpush
